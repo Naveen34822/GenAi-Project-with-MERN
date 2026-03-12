@@ -12,7 +12,7 @@ async function registerUserController(req,res){
     const{username, email, password} = req.body;
 
     if(!username || !email || !password){
-        return res.send(400).json({
+        return res.status(400).json({
             message : "Please provide username ,mail and password"
         })
     }

@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({ // axios  instance created 
-    baseURL : "https://localhost:3000",
+    baseURL : "http://localhost:3000",
     withCredentials : true
 })
 
@@ -43,7 +43,7 @@ export async function logout(){
 
 export async function getMe(){
     try {
-        const response = await axios.get('/api/auth/get-me')
+        const response = await api.get('/api/auth/get-me')
         return response.data
     } catch (error) {
         console.log(error)
