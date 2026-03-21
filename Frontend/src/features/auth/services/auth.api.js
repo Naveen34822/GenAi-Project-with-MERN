@@ -1,7 +1,7 @@
 import axios from "axios"
 
 const api = axios.create({
-  baseURL: "http://localhost:3000",
+  baseURL: "https://genai-project-with-mern.onrender.com",
   withCredentials: true  //to send cookies with every request
 })
 
