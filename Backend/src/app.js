@@ -7,7 +7,10 @@ const app = express()
 app.use(express.json())
 app.use(cookieParser())
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: [
+    "http://localhost:5173",
+    "https://gen-ai-project-with-mern.vercel.app"
+  ],
   credentials: true // required for cookies to be sent cross-origin
 }))
 
