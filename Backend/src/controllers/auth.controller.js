@@ -6,7 +6,8 @@ const tokenBlacklistModel = require("../models/blacklist.model")
 //httpOnly and sameSite so cookie works on cross-origin requests
 const cookieOptions = {
   httpOnly: true,
-  sameSite: "lax",
+  sameSite: "none",
+  secure: true 
 }
 
 /**
