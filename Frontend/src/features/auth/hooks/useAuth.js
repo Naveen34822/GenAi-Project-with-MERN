@@ -1,6 +1,6 @@
-import { useContext, useEffect } from "react"
+import { useContext } from "react"
 import { AuthContext } from "../auth.context"
-import { login, register, logout, getMe } from "../services/auth.api"
+import { login, register, logout } from "../services/auth.api"
 
 export const useAuth = () => {
   const context = useContext(AuthContext)
@@ -10,6 +10,8 @@ export const useAuth = () => {
     setLoading(true)
     try {
       const data = await login({ email, password })
+      localStorage.setItem("hasSession", "true")
+      localStorage.setItem("token", data.token)
       setUser(data.user)
     } catch (err) {
       console.error("Login error:", err)
@@ -23,6 +25,8 @@ export const useAuth = () => {
     setLoading(true)
     try {
       const data = await register({ username, email, password })
+      localStorage.setItem("hasSession", "true")
+      localStorage.setItem("token", data.token)
       setUser(data.user)
     } catch (err) {
       console.error("Register error:", err)
@@ -36,33 +40,18 @@ export const useAuth = () => {
     setLoading(true)
     try {
       await logout()
+      localStorage.removeItem("hasSession")
+      localStorage.removeItem("token")
       setUser(null)
     } catch (err) {
       console.error("Logout error:", err)
+      localStorage.removeItem("hasSession")
+      localStorage.removeItem("token")
       setUser(null)
     } finally {
       setLoading(false)
     }
   }
-
-  useEffect(() => {
-    const getAndSetUser = async () => {
-      try {
-        const data = await getMe()
-        setUser(data.user)
-      } catch (err) {
-        if (err.response?.status === 401) {
-          setUser(null)
-        } else {
-          console.error("getMe error:", err)
-          setUser(null)
-        }
-      } finally {
-        setLoading(false)
-      }
-    }
-    getAndSetUser()
-  }, [])
 
   return { user, loading, handleRegister, handleLogin, handleLogout }
 }

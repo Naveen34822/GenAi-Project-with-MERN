@@ -54,6 +54,7 @@ async function registerUserController(req, res) {
 
     res.status(201).json({
       message: "User registered successfully",
+      token,
       user: {
         id: user._id,
         username: user.username,
@@ -102,6 +103,7 @@ async function loginUserController(req, res) {
 
     res.status(200).json({
       message: "User loggedIn successfully.",
+      token,
       user: {
         id: user._id,
         username: user.username,
@@ -121,7 +123,13 @@ async function loginUserController(req, res) {
  */
 async function logoutUserController(req, res) {
   try {
-    const token = req.cookies.token
+    let token = null
+
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+      token = req.headers.authorization.split(" ")[1]
+    } else if (req.cookies && req.cookies.token) {
+      token = req.cookies.token
+    }
 
     if (token) {
       await tokenBlacklistModel.create({ token })

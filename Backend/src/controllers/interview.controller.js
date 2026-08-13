@@ -1,6 +1,6 @@
 const pdfParseModule = require("pdf-parse")
 const pdfParse = pdfParseModule.default || pdfParseModule
-const { generateInterviewReport, generateResumePdf } = require("../services/ai.service")
+const { generateInterviewReport, evaluateAnswer, generateLiveChatReply } = require("../services/ai.service")
 const interviewReportModel = require("../models/interviewReport.model")
 
 async function generateInterViewReportController(req, res) {
@@ -89,27 +89,43 @@ async function getAllInterviewReportsController(req, res) {
   }
 }
 
-async function generateResumePdfController(req, res) {
+async function evaluateAnswerController(req, res) {
   try {
-    const { interviewReportId } = req.params
-    const interviewReport = await interviewReportModel.findById(interviewReportId)
+    const { question, userAnswer, intention, modelAnswer } = req.body
 
-    if (!interviewReport) {
-      return res.status(404).json({ message: "Interview report not found." })
+    if (!question || !userAnswer) {
+      return res.status(400).json({ message: "Question and User Answer are required." })
     }
 
-    const { resume, jobDescription, selfDescription } = interviewReport
-    const pdfBuffer = await generateResumePdf({ resume, jobDescription, selfDescription })
+    const evaluation = await evaluateAnswer({ question, userAnswer, intention, modelAnswer })
 
-    res.set({
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename=resume_${interviewReportId}.pdf`
+    res.status(200).json({
+      message: "Answer evaluated successfully.",
+      evaluation
     })
-
-    res.send(pdfBuffer)
   } catch (err) {
-    console.error("generateResumePdfController error:", err)
-    res.status(500).json({ message: "Failed to generate resume PDF." })
+    console.error("evaluateAnswerController error:", err)
+    res.status(500).json({ message: "Failed to evaluate answer." })
+  }
+}
+
+async function generateLiveChatReplyController(req, res) {
+  try {
+    const { history, jobDescription, resume } = req.body
+
+    if (!history || !Array.isArray(history) || !jobDescription) {
+      return res.status(400).json({ message: "History array and Job Description are required." })
+    }
+
+    const reply = await generateLiveChatReply({ history, jobDescription, resume })
+
+    res.status(200).json({
+      message: "Chat reply generated successfully.",
+      reply
+    })
+  } catch (err) {
+    console.error("generateLiveChatReplyController error:", err)
+    res.status(500).json({ message: "Failed to generate chat reply." })
   }
 }
 
@@ -117,5 +133,6 @@ module.exports = {
   generateInterViewReportController,
   getInterviewReportByIdController,
   getAllInterviewReportsController,
-  generateResumePdfController
+  evaluateAnswerController,
+  generateLiveChatReplyController
 }

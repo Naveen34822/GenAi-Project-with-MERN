@@ -1,0 +1,516 @@
+@use "sass:color";
+
+$bg-page: #0d1117;
+$bg-card: #161b22;
+$bg-panel: #1c2230;
+$bg-input: #1e2535;
+$border-color: #2a3348;
+$text-primary: #e6edf3;
+$text-muted: #7d8590;
+$accent: #ff2d78;
+$font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+$color-high: #3fb950;
+$color-mid: #f5a623;
+$color-low: #ff4d4d;
+
+.live-call-section {
+  width: 100%;
+}
+
+// ── Call Lobby ──
+.call-lobby {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 400px;
+  background-color: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: 0.75rem;
+  padding: 3rem;
+  gap: 1rem;
+
+  .lobby-icon {
+    font-size: 3.5rem;
+    margin-bottom: 0.5rem;
+    animation: wobble 3s infinite;
+  }
+
+  h3 {
+    margin: 0;
+    color: $text-primary;
+    font-size: 1.5rem;
+  }
+
+  p {
+    margin: 0;
+    color: $text-muted;
+    font-size: 0.9rem;
+    max-width: 400px;
+    line-height: 1.6;
+  }
+
+  .dial-btn {
+    margin-top: 1rem;
+    padding: 0.85rem 2rem;
+    font-size: 1rem;
+    gap: 0.5rem;
+  }
+}
+
+// ── Call Screen (Calling & Connected) ──
+.call-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 450px;
+  background: radial-gradient(circle, #1a2333 0%, #0d1117 100%);
+  border: 1px solid $border-color;
+  border-radius: 0.75rem;
+  padding: 2.5rem;
+  position: relative;
+  overflow: hidden;
+
+  .timer-display {
+    position: absolute;
+    top: 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: $text-primary;
+    letter-spacing: 0.05em;
+  }
+
+  .avatar-container {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2rem;
+
+    &.listening {
+      .pulse-avatar {
+        box-shadow: 0 0 0 15px rgba($color-high, 0.15),
+                    0 0 0 30px rgba($color-high, 0.05);
+        animation: pulse-green 1.5s infinite;
+      }
+      .voice-waves {
+        display: flex;
+        .wave {
+          background-color: $color-high;
+          animation-play-state: running;
+        }
+      }
+    }
+
+    &.speaking {
+      .pulse-avatar {
+        box-shadow: 0 0 0 15px rgba($accent, 0.15),
+                    0 0 0 30px rgba($accent, 0.05);
+        animation: pulse-pink 1.5s infinite;
+      }
+      .voice-waves {
+        display: flex;
+        .wave {
+          background-color: $accent;
+          animation-play-state: running;
+        }
+      }
+    }
+  }
+
+  .pulse-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: $bg-panel;
+    border: 2px solid $border-color;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    z-index: 2;
+
+    .avatar-letter {
+      font-size: 2rem;
+      font-weight: 700;
+      color: $text-primary;
+      letter-spacing: 0.05em;
+    }
+  }
+
+  // Bouncing Waveform Bars
+  .voice-waves {
+    position: absolute;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    bottom: -15px;
+    z-index: 3;
+    height: 40px;
+
+    .wave {
+      display: inline-block;
+      width: 4px;
+      height: 15px;
+      border-radius: 4px;
+      animation: wave-bounce 1.2s ease-in-out infinite alternate paused;
+
+      &.bar-1 { height: 10px; animation-delay: 0.1s; }
+      &.bar-2 { height: 25px; animation-delay: 0.3s; }
+      &.bar-3 { height: 35px; animation-delay: 0.5s; }
+      &.bar-4 { height: 20px; animation-delay: 0.2s; }
+      &.bar-5 { height: 12px; animation-delay: 0.4s; }
+    }
+  }
+
+  .caller-name {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: $text-primary;
+    margin: 0 0 0.5rem 0;
+  }
+
+  .call-status {
+    font-size: 0.85rem;
+    color: $text-muted;
+    margin-bottom: 1.25rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    min-height: 1.2rem;
+  }
+
+  .interim-text-box {
+    min-height: 45px;
+    margin-bottom: 1.5rem;
+    width: 100%;
+    max-width: 450px;
+    text-align: center;
+  }
+
+  .call-subtitle-box {
+    min-height: 96px;
+    margin-bottom: 1.5rem;
+    width: 100%;
+    max-width: 620px;
+    text-align: left;
+    background-color: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba($border-color, 0.6);
+    border-radius: 0.6rem;
+    padding: 0.85rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
+
+  .call-subtitle-label {
+    align-self: flex-start;
+    color: $accent;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .call-subtitle {
+    font-size: 0.96rem;
+    line-height: 1.5;
+    color: #e6edf3;
+    margin: 0;
+    font-weight: 500;
+    width: 100%;
+    max-height: 6rem;
+    overflow-y: auto;
+    overflow-wrap: anywhere;
+  }
+
+  .interim-text {
+    font-size: 0.95rem;
+    font-style: italic;
+    color: #85b5ff;
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .call-error {
+    font-size: 0.8rem;
+    color: $color-low;
+    margin-bottom: 1rem;
+  }
+
+  .hangup-btn {
+    padding: 0.75rem 2.5rem;
+    border-radius: 2rem;
+    border: none;
+    background-color: $color-low;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba($color-low, 0.3);
+    transition: transform 0.2s, background-color 0.2s;
+
+    &:hover {
+      background-color: color.adjust($color-low, $lightness: -5%);
+      transform: scale(1.05);
+    }
+  }
+}
+
+// ── Call Ended Dashboard ──
+.call-ended-dashboard {
+  background-color: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: 0.75rem;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+
+  .success-badge {
+    align-self: center;
+    background-color: rgba($color-high, 0.1);
+    border: 1px solid rgba($color-high, 0.3);
+    color: $color-high;
+    padding: 0.35rem 0.85rem;
+    border-radius: 2rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  h3 {
+    margin: 0;
+    text-align: center;
+    color: $text-primary;
+    font-size: 1.4rem;
+  }
+
+  .ended-hint {
+    margin: 0;
+    text-align: center;
+    color: $text-muted;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    max-width: 480px;
+    align-self: center;
+  }
+
+  .ended-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    border-bottom: 1px solid $border-color;
+    padding-bottom: 1.5rem;
+  }
+
+  .eval-call-btn {
+    padding: 0.8rem 1.5rem;
+    font-size: 0.875rem;
+  }
+
+  .retry-btn {
+    padding: 0.8rem 1.5rem;
+    font-size: 0.875rem;
+  }
+}
+
+// ── Call Evaluation Card ──
+.call-evaluation-card {
+  background-color: $bg-panel;
+  border: 1px dashed rgba($border-color, 0.8);
+  border-radius: 0.6rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  h4 {
+    margin: 0;
+    color: $text-primary;
+    font-size: 1.1rem;
+  }
+
+  .evaluation-score-wrap {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background-color: $bg-card;
+    padding: 0.75rem;
+    border-radius: 0.4rem;
+    border: 1px solid $border-color;
+  }
+
+  .evaluation-score-pct {
+    font-size: 1.5rem;
+    font-weight: 800;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    border: 2px solid;
+
+    &.score--high { color: $color-high; border-color: $color-high; }
+    &.score--mid { color: $color-mid; border-color: $color-mid; }
+    &.score--low { color: $color-low; border-color: $color-low; }
+  }
+
+  .eval-grade {
+    font-size: 0.85rem;
+    color: $text-primary;
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .eval-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+
+    strong {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: $text-muted;
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      color: $text-primary;
+    }
+
+    .polished-box {
+      font-style: italic;
+      background-color: rgba($accent, 0.02);
+      border-left: 3px solid $accent;
+      padding: 0.5rem 0.75rem;
+      margin: 0;
+    }
+  }
+
+  .filler-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.2rem;
+  }
+
+  .filler-tag {
+    font-size: 0.75rem;
+    background-color: rgba($color-low, 0.1);
+    border: 1px solid rgba($color-low, 0.2);
+    color: #ff8585;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+}
+
+// ── Transcript Bubbles ──
+.call-transcript-log {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  h4 {
+    margin: 0;
+    color: $text-primary;
+    font-size: 1.1rem;
+    border-bottom: 1px solid rgba($border-color, 0.5);
+    padding-bottom: 0.5rem;
+  }
+
+  .transcript-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-height: 350px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: $border-color;
+      border-radius: 4px;
+    }
+  }
+
+  .transcript-bubble {
+    display: flex;
+    flex-direction: column;
+    padding: 0.8rem 1rem;
+    border-radius: 0.5rem;
+    max-width: 85%;
+    line-height: 1.5;
+
+    .bubble-role {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.25rem;
+    }
+
+    .bubble-text {
+      margin: 0;
+      font-size: 0.875rem;
+    }
+
+    &.bubble--model {
+      align-self: flex-start;
+      background-color: $bg-panel;
+      border: 1px solid $border-color;
+      color: $text-primary;
+      .bubble-role { color: $accent; }
+    }
+
+    &.bubble--user {
+      align-self: flex-end;
+      background-color: rgba($color-high, 0.08);
+      border: 1px solid rgba($color-high, 0.2);
+      color: $text-primary;
+      .bubble-role { color: $color-high; }
+    }
+  }
+}
+
+// ── Animations ──
+@keyframes wobble {
+  0% { transform: scale(1); }
+  5% { transform: scale(1.1) rotate(5deg); }
+  10% { transform: scale(1.1) rotate(-5deg); }
+  15% { transform: scale(1.1) rotate(3deg); }
+  20% { transform: scale(1.1) rotate(-3deg); }
+  25% { transform: scale(1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes wave-bounce {
+  from { transform: scaleY(0.4); }
+  to { transform: scaleY(1.5); }
+}
+
+@keyframes pulse-green {
+  0% { box-shadow: 0 0 0 0 rgba($color-high, 0.4); }
+  70% { box-shadow: 0 0 0 25px rgba($color-high, 0); }
+  100% { box-shadow: 0 0 0 0 rgba($color-high, 0); }
+}
+
+@keyframes pulse-pink {
+  0% { box-shadow: 0 0 0 0 rgba($accent, 0.4); }
+  70% { box-shadow: 0 0 0 25px rgba($accent, 0); }
+  100% { box-shadow: 0 0 0 0 rgba($accent, 0); }
+}

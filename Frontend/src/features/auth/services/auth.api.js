@@ -1,8 +1,16 @@
 import axios from "axios"
 
 const api = axios.create({
-  baseURL: "https://genai-project-with-mern.onrender.com",
+  baseURL: import.meta.env.DEV ? "http://localhost:5050" : "https://genai-project-with-mern.onrender.com",
   withCredentials: true  //to send cookies with every request
+})
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token")
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
 })
 
 export async function register({ username, email, password }) {

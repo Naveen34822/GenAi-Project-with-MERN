@@ -1,8 +1,16 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: "https://genai-project-with-mern.onrender.com",
+    baseURL: import.meta.env.DEV ? "http://localhost:5050" : "https://genai-project-with-mern.onrender.com",
     withCredentials: true,
+})
+
+api.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token")
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
 })
 
 
@@ -13,8 +21,10 @@ export const generateInterviewReport = async ({ jobDescription, selfDescription,
 
     const formData = new FormData()
     formData.append("jobDescription", jobDescription)
-    formData.append("selfDescription", selfDescription)
-    formData.append("resume", resumeFile)
+    formData.append("selfDescription", selfDescription || "")
+    if (resumeFile) {
+        formData.append("resume", resumeFile)
+    }
 
     const response = await api.post("/api/interview/", formData, {
         headers: {
@@ -48,12 +58,17 @@ export const getAllInterviewReports = async () => {
 
 
 /**
- * @description Service to generate resume pdf based on user self description, resume content and job description.
+ * @description Service to evaluate mock interview question answer.
  */
-export const generateResumePdf = async ({ interviewReportId }) => {
-    const response = await api.post(`/api/interview/resume/pdf/${interviewReportId}`, null, {
-        responseType: "blob"
-    })
+export const evaluateInterviewAnswer = async ({ question, userAnswer, intention, modelAnswer }) => {
+    const response = await api.post("/api/interview/evaluate", { question, userAnswer, intention, modelAnswer })
+    return response.data
+}
 
+/**
+ * @description Service to send conversation history and get AI's follow-up voice-call reply.
+ */
+export const generateLiveVoiceChatReply = async ({ history, jobDescription, resume }) => {
+    const response = await api.post("/api/interview/chat", { history, jobDescription, resume })
     return response.data
 }

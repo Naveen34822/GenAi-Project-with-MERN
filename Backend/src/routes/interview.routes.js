@@ -31,12 +31,17 @@ interviewRouter.get("/", authMiddleware.authUser, interviewController.getAllInte
 
 
 /**
- * @route GET /api/interview/resume/pdf
- * @description generate resume pdf on the basis of user self description, resume content and job description.
+ * @route POST /api/interview/evaluate
+ * @description Evaluate user's answer to a mock interview question
  * @access private
  */
-interviewRouter.post("/resume/pdf/:interviewReportId", authMiddleware.authUser, interviewController.generateResumePdfController)
+interviewRouter.post("/evaluate", authMiddleware.authUser, interviewController.evaluateAnswerController)
 
-
+/**
+ * @route POST /api/interview/chat
+ * @description Send conversation history and get AI follow up response
+ * @access private
+ */
+interviewRouter.post("/chat", authMiddleware.authUser, interviewController.generateLiveChatReplyController)
 
 module.exports = interviewRouter

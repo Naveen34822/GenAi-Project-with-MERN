@@ -1,0 +1,551 @@
+@use "sass:color";
+
+$bg-page: #0d1117;
+$bg-card: #161b22;
+$bg-panel: #1c2230;
+$bg-input: #1e2535;
+$border-color: #2a3348;
+$text-primary: #e6edf3;
+$text-muted: #7d8590;
+$accent: #ff2d78;
+$font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+$color-high: #3fb950;
+$color-mid: #f5a623;
+$color-low: #ff4d4d;
+
+.simulator-section {
+  width: 100%;
+
+  &__hint {
+    margin: 0 0 1.5rem 0;
+    font-size: 0.85rem;
+    color: $text-muted;
+    line-height: 1.6;
+  }
+}
+
+.simulator-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 1.5rem;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.simulator-left, .simulator-right {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.simulator-card {
+  background-color: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+}
+
+.simulator-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: $text-muted;
+  margin-bottom: 0.5rem;
+}
+
+.simulator-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: $bg-input;
+  border: 1px solid $border-color;
+  border-radius: 0.5rem;
+  color: $text-primary;
+  font-family: $font-stack;
+  font-size: 0.875rem;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+
+  &:focus {
+    border-color: $accent;
+  }
+}
+
+.question-card-display {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  .question-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .type-tag {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.25rem 0.6rem;
+    border-radius: 2rem;
+
+    &--technical {
+      background-color: rgba(63, 185, 80, 0.15);
+      color: #58a6ff;
+    }
+
+    &--behavioral {
+      background-color: rgba(245, 166, 35, 0.15);
+      color: #ff9e3b;
+    }
+  }
+
+  .index-indicator {
+    font-size: 0.75rem;
+    color: $text-muted;
+  }
+
+  .question-text {
+    font-size: 1.15rem;
+    font-weight: 500;
+    line-height: 1.5;
+    color: $text-primary;
+    margin: 0;
+    font-style: italic;
+  }
+
+  .question-intention {
+    font-size: 0.8rem;
+    color: $text-muted;
+    line-height: 1.5;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba($border-color, 0.5);
+  }
+}
+
+.response-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  .response-textarea {
+    width: 100%;
+    background-color: $bg-input;
+    border: 1px solid $border-color;
+    border-radius: 0.5rem;
+    color: $text-primary;
+    font-family: $font-stack;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    padding: 0.8rem;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+
+    &:focus {
+      border-color: $accent;
+    }
+  }
+
+  .recording-controls {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .record-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid $border-color;
+    background-color: $bg-panel;
+    color: $text-primary;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+
+    &:hover {
+      background-color: rgba($accent, 0.05);
+      border-color: $accent;
+    }
+
+    &--active {
+      background-color: rgba($color-low, 0.15) !important;
+      border-color: $color-low !important;
+      color: $color-low;
+      animation: record-glow 1.5s infinite alternate;
+    }
+
+    &__icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  .clear-btn {
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid $border-color;
+    background: transparent;
+    color: $text-muted;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: color 0.2s, background-color 0.2s;
+
+    &:hover:not(:disabled) {
+      color: $text-primary;
+      background-color: rgba($border-color, 0.3);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+
+  .submit-answer-btn {
+    width: 100%;
+    margin-top: 0.25rem;
+    padding: 0.85rem;
+    font-size: 0.9rem;
+    justify-content: center;
+  }
+}
+
+.simulator-error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: $color-low;
+  text-align: center;
+}
+
+// ── Right Column: AI Feedback Dashboard ──
+.empty-feedback-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 350px;
+  border: 1.5px dashed $border-color;
+  border-radius: 0.75rem;
+  padding: 2rem;
+
+  .empty-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  h3 {
+    margin: 0 0 0.5rem 0;
+    color: $text-primary;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: $text-muted;
+    line-height: 1.6;
+    max-width: 320px;
+  }
+}
+
+.shimmer-feedback-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 350px;
+  background-color: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: 0.75rem;
+  padding: 2rem;
+  gap: 1.25rem;
+
+  .shimmer-ring {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid rgba($accent, 0.1);
+    border-top-color: $accent;
+    animation: spin 1s infinite linear;
+  }
+
+  .shimmer-line {
+    height: 12px;
+    background: linear-gradient(90deg, #1e2535 25%, #2a3348 50%, #1e2535 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite linear;
+    border-radius: 4px;
+
+    &.line-1 { width: 80%; }
+    &.line-2 { width: 90%; }
+    &.line-3 { width: 70%; }
+  }
+
+  p {
+    margin: 0.5rem 0 0 0;
+    font-size: 0.85rem;
+    color: $text-muted;
+  }
+}
+
+.feedback-card {
+  background-color: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  .feedback-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: $text-primary;
+    margin: 0;
+  }
+
+  .score-summary {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    background-color: $bg-panel;
+    padding: 1rem;
+    border-radius: 0.6rem;
+    border: 1px solid rgba($border-color, 0.6);
+  }
+
+  .score-ring {
+    flex-shrink: 0;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    border: 5px solid;
+
+    &--high {
+      border-color: $color-high;
+      color: $color-high;
+      box-shadow: 0 0 10px rgba($color-high, 0.2);
+    }
+
+    &--mid {
+      border-color: $color-mid;
+      color: $color-mid;
+      box-shadow: 0 0 10px rgba($color-mid, 0.2);
+    }
+
+    &--low {
+      border-color: $color-low;
+      color: $color-low;
+      box-shadow: 0 0 10px rgba($color-low, 0.2);
+    }
+
+    &__value {
+      font-size: 1.35rem;
+      line-height: 1;
+    }
+
+    &__pct {
+      font-size: 0.75rem;
+      margin-left: 1px;
+    }
+  }
+
+  .score-label-wrap {
+    .score-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: $text-primary;
+      margin: 0 0 0.25rem 0;
+    }
+
+    .score-grade {
+      font-size: 0.78rem;
+      color: $text-muted;
+      margin: 0;
+      line-height: 1.4;
+    }
+  }
+
+  .feedback-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    border-bottom: 1px solid rgba($border-color, 0.4);
+    padding-bottom: 1rem;
+
+    &:last-of-type {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .section-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: $text-muted;
+    }
+
+    .feedback-text {
+      font-size: 0.875rem;
+      line-height: 1.6;
+      color: $text-primary;
+      margin: 0;
+    }
+  }
+
+  .filler-words-section {
+    .filler-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+    }
+
+    .filler-tag {
+      background-color: rgba($color-low, 0.1);
+      border: 1px solid rgba($color-low, 0.2);
+      color: #ff8585;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    .filler-note {
+      width: 100%;
+      margin: 0.25rem 0 0 0;
+      font-size: 0.72rem;
+      color: $text-muted;
+    }
+
+    .no-filler-text {
+      font-size: 0.85rem;
+      color: $color-high;
+      margin: 0;
+    }
+  }
+
+  .better-answer-section {
+    background-color: rgba($accent, 0.02);
+    border: 1px dashed rgba($border-color, 0.8);
+    padding: 1rem;
+    border-radius: 0.5rem;
+
+    .better-answer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .speak-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.6rem;
+      background-color: $bg-panel;
+      border: 1px solid $border-color;
+      border-radius: 4px;
+      color: $text-primary;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s, border-color 0.2s;
+
+      &:hover {
+        background-color: $accent;
+        border-color: $accent;
+      }
+
+      &--playing {
+        background-color: $color-low !important;
+        border-color: $color-low !important;
+      }
+
+      &__icon {
+        display: flex;
+        align-items: center;
+      }
+    }
+
+    .better-answer-box {
+      font-size: 0.875rem;
+      line-height: 1.6;
+      font-style: italic;
+      color: $text-primary;
+      margin: 0;
+    }
+  }
+
+  .next-question-btn {
+    width: 100%;
+    padding: 0.85rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba($accent, 0.3);
+    background-color: rgba($accent, 0.05);
+    color: $accent;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+
+    &:hover {
+      background-color: $accent;
+      color: #ffffff;
+      border-color: $accent;
+    }
+  }
+}
+
+// ── Keyframes ──
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes record-glow {
+  from {
+    box-shadow: 0 0 5px rgba($color-low, 0.2);
+  }
+  to {
+    box-shadow: 0 0 15px rgba($color-low, 0.6);
+  }
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background-color: $color-low;
+  border-radius: 50%;
+  animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+  from { opacity: 0.3; }
+  to { opacity: 1; }
+}
