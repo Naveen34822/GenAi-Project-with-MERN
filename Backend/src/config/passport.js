@@ -8,6 +8,7 @@ passport.use(
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: "/api/auth/google/callback",
+      proxy: true // Required for production deployments behind a proxy (like Render/Heroku) to retain HTTPS in the callback URL
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
