@@ -14,6 +14,12 @@ export const AuthProvider = ({ children }) => {
     // Fetch user on app startup (runs only once)
     useEffect(() => {
         const getAndSetUser = async () => {
+            // Skip on OAuth callback page — OAuthCallback handles auth itself
+            if (window.location.pathname === '/oauth/callback') {
+                setLoading(false)
+                return
+            }
+
             const token = localStorage.getItem("token")
 
             if (!token) {

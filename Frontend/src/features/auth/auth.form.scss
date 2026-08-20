@@ -1,45 +1,270 @@
+// ── Auth Page Shell ──────────────────────────────────────────────────────────
+main.auth-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 1rem;
+  position: relative;
+  overflow: hidden;
 
-main{
-    min-height: 100vh;
+  // Floating orbs unique to auth page
+  &::before {
+    content: '';
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(108,99,255,0.2) 0%, transparent 70%);
+    top: -150px;
+    left: -100px;
+    animation: float 8s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(225,3,77,0.15) 0%, transparent 70%);
+    bottom: -100px;
+    right: -80px;
+    animation: float 10s ease-in-out infinite reverse;
+    pointer-events: none;
+  }
+}
+
+// ── Form Container (glass card) ──────────────────────────────────────────────
+.form-container {
+  width: 100%;
+  max-width: 420px;
+  padding: 2.5rem 2.25rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border-radius: 1.5rem;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 1px 0 rgba(255, 255, 255, 0.08) inset;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: relative;
+  z-index: 2;
+  animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: perspective(1200px) rotateX(-1deg) translateY(-4px);
+    box-shadow:
+      0 24px 60px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+      0 0 60px rgba(108, 99, 255, 0.08);
+  }
+
+  // Top accent line
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(225, 3, 77, 0.6), rgba(108, 99, 255, 0.6), transparent);
+    border-radius: 999px;
+  }
+}
+
+// ── Header ───────────────────────────────────────────────────────────────────
+.form-header {
+  text-align: center;
+
+  .form-logo {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    display: block;
+    animation: float 4s ease-in-out infinite;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #f0f4ff;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.4rem;
+  }
+
+  p {
+    font-size: 0.875rem;
+    color: rgba(240, 244, 255, 0.45);
+    line-height: 1.5;
+  }
+}
+
+// ── Form ─────────────────────────────────────────────────────────────────────
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+// ── Input Groups ─────────────────────────────────────────────────────────────
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: rgba(240, 244, 255, 0.55);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  input {
     width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    outline: none;
+    padding: 0.8rem 1.1rem;
+    border-radius: 0.875rem;
+    background: rgba(255, 255, 255, 0.05);
+    color: #f0f4ff;
+    font-size: 0.9rem;
+    font-family: var(--font, 'Inter', sans-serif);
+    transition: all 0.2s ease;
+    backdrop-filter: blur(8px);
 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-
-    .form-container{
-        min-width: 350px;
-
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
+    &::placeholder {
+      color: rgba(240, 244, 255, 0.25);
     }
 
-    form{
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
+    &:focus {
+      border-color: rgba(225, 3, 77, 0.5);
+      background: rgba(225, 3, 77, 0.04);
+      box-shadow: 0 0 0 3px rgba(225, 3, 77, 0.1), 0 2px 8px rgba(0, 0, 0, 0.2);
+      transform: translateY(-1px);
     }
 
-    .input-group{
-        display: flex;
-        flex-direction: column;
-
-        gap: 0.5rem;
-
-
-        input{
-            border: none;
-            outline: none;
-            padding-inline: 1rem;
-            padding-block: 0.75rem;
-            border-radius: 0.75rem;
-        }
+    &:hover:not(:focus) {
+      border-color: rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.07);
     }
+  }
+}
 
-    a{
-        color: #e1034d;
-        text-decoration: none;
-    }
+// ── Links ────────────────────────────────────────────────────────────────────
+a {
+  color: #e1034d;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #ff4d7e;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+// ── Form footer (sign up link etc) ───────────────────────────────────────────
+.form-footer {
+  text-align: center;
+  font-size: 0.85rem;
+  color: rgba(240, 244, 255, 0.4);
+}
+
+// ── Google OAuth button ───────────────────────────────────────────────────────
+.google-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f0f4ff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.875rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: var(--font, 'Inter', sans-serif);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
+
+  svg, img { width: 20px; height: 20px; flex-shrink: 0; }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.06) 50%, transparent 60%);
+    background-size: 200% 100%;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.18);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+
+    &::after { opacity: 1; animation: shimmer 0.6s ease forwards; }
+  }
+
+  &:active { transform: scale(0.97); }
+}
+
+// ── OR divider ───────────────────────────────────────────────────────────────
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: rgba(240, 244, 255, 0.3);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+
+  &::before, &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+// ── Error / status messages ───────────────────────────────────────────────────
+.auth-error {
+  background: rgba(225, 3, 77, 0.08);
+  border: 1px solid rgba(225, 3, 77, 0.2);
+  color: #ff6b8a;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.6rem;
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+// ── Animations ───────────────────────────────────────────────────────────────
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(32px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
 }

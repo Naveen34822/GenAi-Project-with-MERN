@@ -1,20 +1,167 @@
 @use "./style/button.scss";
 
+// ── Google Font ─────────────────────────────────────────────────────────────
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+// ── Design Tokens ───────────────────────────────────────────────────────────
+:root {
+  --bg-deep:       #050811;
+  --bg-surface:    #0b0f1e;
+  --bg-card:       rgba(255,255,255,0.04);
+  --bg-card-hover: rgba(255,255,255,0.07);
+  --border-glass:  rgba(255,255,255,0.08);
+  --border-glow:   rgba(225, 3, 77, 0.4);
+
+  --accent:        #e1034d;
+  --accent-dim:    rgba(225, 3, 77, 0.15);
+  --accent-glow:   rgba(225, 3, 77, 0.6);
+  --purple:        #6c63ff;
+  --purple-dim:    rgba(108, 99, 255, 0.15);
+  --blue:          #00d4ff;
+
+  --text-primary:  #f0f4ff;
+  --text-muted:    rgba(240,244,255,0.45);
+  --text-subtle:   rgba(240,244,255,0.25);
+
+  --blur:          blur(24px);
+  --blur-sm:       blur(12px);
+  --radius:        1.25rem;
+  --radius-sm:     0.75rem;
+  --shadow-glass:  0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+  --shadow-deep:   0 24px 80px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4);
+  --shadow-glow:   0 0 40px rgba(225,3,77,0.2), 0 0 80px rgba(108,99,255,0.1);
+
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// ── Reset ────────────────────────────────────────────────────────────────────
 * {
-    margin: 0%;
-    padding: 0%;
-    box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-html,
-body,
+// ── Base ─────────────────────────────────────────────────────────────────────
+html, body, #root {
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+// ── Global animated background ───────────────────────────────────────────────
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(108,99,255,0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 80%, rgba(225,3,77,0.14) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 60% 30%, rgba(0,212,255,0.08) 0%, transparent 50%);
+  animation: orb-shift 12s ease-in-out infinite alternate;
+}
+
+@keyframes orb-shift {
+  0%   { transform: scale(1) translate(0, 0); }
+  33%  { transform: scale(1.05) translate(-1%, 1%); }
+  66%  { transform: scale(0.98) translate(1%, -1%); }
+  100% { transform: scale(1.03) translate(-0.5%, 0.5%); }
+}
+
+// ── Mesh grid overlay ────────────────────────────────────────────────────────
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+}
+
+// ── Page layer (sits above pseudo-elements) ──────────────────────────────────
 #root {
-    width: 100%;
-    background-color: #161616;
-    color: whitesmoke;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  position: relative;
+  z-index: 1;
 }
 
-.highlight{
-    color: #d20d3b;
+// ── Global highlight ─────────────────────────────────────────────────────────
+.highlight {
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+// ── Glass card utility ───────────────────────────────────────────────────────
+.glass-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-glass);
+  transition: var(--transition);
+
+  &:hover {
+    background: var(--bg-card-hover);
+    border-color: rgba(255,255,255,0.12);
+    box-shadow: var(--shadow-glass), var(--shadow-glow);
+    transform: translateY(-2px);
+  }
+}
+
+// ── 3D tilt on hover (add via JS or as utility) ──────────────────────────────
+.tilt-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+
+  &:hover {
+    transform: perspective(1000px) rotateX(-2deg) rotateY(3deg) translateZ(8px);
+  }
+}
+
+// ── Custom scrollbar ─────────────────────────────────────────────────────────
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 999px;
+  &:hover { background: rgba(225,3,77,0.4); }
+}
+
+// ── Text selection ───────────────────────────────────────────────────────────
+::selection {
+  background: var(--accent-dim);
+  color: var(--text-primary);
+}
+
+// ── Float animation (shared) ─────────────────────────────────────────────────
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-12px); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(225,3,77,0.3); }
+  50%       { box-shadow: 0 0 40px rgba(225,3,77,0.6), 0 0 80px rgba(225,3,77,0.2); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

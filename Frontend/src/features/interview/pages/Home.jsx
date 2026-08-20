@@ -2,9 +2,11 @@ import React, { useState, useRef } from 'react'
 import "../style/home.scss"
 import { useInterview } from '../hooks/useInterview.js'
 import { useNavigate } from 'react-router'
+import { useAuth } from '../../auth/hooks/useAuth'
 
 const Home = () => {
   const { loading, generateReport, reports } = useInterview()
+  const { user, handleLogout } = useAuth()
   const [jobDescription, setJobDescription] = useState("")
   const [selfDescription, setSelfDescription] = useState("")
   const [selectedFileName, setSelectedFileName] = useState("")
@@ -50,8 +52,34 @@ const Home = () => {
     )
   }
 
+  const onLogout = async () => {
+    await handleLogout()
+    navigate('/login')
+  }
+
   return (
     <div className='home-page'>
+
+      {/* Navbar */}
+      <nav className='navbar'>
+        <div className='navbar__brand'>
+          <span className='navbar__logo'>🤖</span>
+          <span className='navbar__title'>AI Interview Prep</span>
+        </div>
+        <div className='navbar__user'>
+          {user?.avatar ? (
+            <img className='navbar__avatar' src={user.avatar} alt={user.username} referrerPolicy="no-referrer" />
+          ) : (
+            <div className='navbar__avatar navbar__avatar--placeholder'>
+              {user?.username?.[0]?.toUpperCase() || 'U'}
+            </div>
+          )}
+          <span className='navbar__username'>{user?.username || user?.email}</span>
+          <button id='logout-btn' className='navbar__logout-btn' onClick={onLogout}>
+            Logout
+          </button>
+        </div>
+      </nav>
 
       {/* Page Header */}
       <header className='page-header'>

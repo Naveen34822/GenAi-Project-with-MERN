@@ -1,11 +1,14 @@
 const express = require("express")
 const cookieParser = require("cookie-parser")
 const cors = require("cors")
+const passport = require("./config/passport")
 
 const app = express()
 
 app.use(express.json())
 app.use(cookieParser())
+app.use(passport.initialize()) // initialize passport (no sessions needed — we use JWT)
+
 const allowedOrigins = [
   "https://gen-ai-project-with-mern.vercel.app"
 ]

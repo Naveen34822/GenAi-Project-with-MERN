@@ -1,75 +1,37 @@
-import { getAllInterviewReports, generateInterviewReport, getInterviewReportById } from "../services/interview.api"
-import { useContext, useEffect, useCallback } from "react"
-import { InterviewContext } from "../interview.context"
+import { useEffect, useRef } from "react"
 import { useParams } from "react-router"
+import { useInterviewStore } from "../store/useInterviewStore"
 
 export const useInterview = () => {
-  const context = useContext(InterviewContext)
   const { interviewId } = useParams()
 
-  if (!context) {
-    throw new Error("useInterview must be used within an InterviewProvider")
-  }
+  // Select all state and actions from the Zustand store
+  const {
+    loading,
+    report,
+    reports,
+    generateReport,
+    getReportById,
+    getReports
+  } = useInterviewStore()
 
-  const { loading, setLoading, report, setReport, reports, setReports } = context
-
-  const generateReport = useCallback(async ({ jobDescription, selfDescription, resumeFile }) => {
-    setLoading(true)
-    try {
-      const response = await generateInterviewReport({
-        jobDescription,
-        selfDescription,
-        resumeFile
-      })
-      setReport(response.interviewReport)
-      return response.interviewReport
-    } catch (error) {
-      console.error("generateReport error:", error)
-      return null
-    } finally {
-      setLoading(false)
-    }
-  }, [setLoading, setReport])
-
-  const getReportById = useCallback(async (interviewId) => {
-    setLoading(true)
-    try {
-      const response = await getInterviewReportById(interviewId)
-      setReport(response.interviewReport)
-      return response.interviewReport
-    } catch (error) {
-      console.error("getReportById error:", error)
-      return null
-    } finally {
-      setLoading(false)
-    }
-  }, [setLoading, setReport])
-
-  const getReports = useCallback(async () => {
-    setLoading(true)
-    try {
-      const response = await getAllInterviewReports()
-      setReports(response.interviewReports)
-      return response.interviewReports
-    } catch (error) {
-      console.error("getReports error:", error)
-      return null
-    } finally {
-      setLoading(false)
-    }
-  }, [setLoading, setReports])
+  // Prevents fetching twice in React StrictMode and prevents infinite loop
+  const hasFetched = useRef(false)
 
   useEffect(() => {
+    if (hasFetched.current) return
+    hasFetched.current = true
+
     if (interviewId) {
+      // On the interview detail page — fetch that specific report
       if (!report || report._id !== interviewId) {
-        getReportById(interviewId)
+        getReportById(interviewId).catch(console.error)
       }
     } else {
-      if (!reports || reports.length === 0) {
-        getReports()
-      }
+      // On the home page — fetch all reports (runs only once)
+      getReports().catch(console.error)
     }
-  }, [interviewId, report, reports, getReportById, getReports])
+  }, [interviewId, getReportById, getReports, report])
 
   return { loading, report, reports, generateReport, getReportById, getReports }
 }

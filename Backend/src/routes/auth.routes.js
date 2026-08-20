@@ -1,6 +1,7 @@
 const { Router } = require("express")
 const authController = require("../controllers/auth.controller")
 const authMiddleware = require("../middlewares/auth.middleware")
+const passport = require("../config/passport")
 
 const authRouter = Router()
 
@@ -31,5 +32,26 @@ authRouter.get("/logout", authController.logoutUserController)
  * @access Private
  */
 authRouter.get("/get-me", authMiddleware.authUser, authController.getMeController)
+
+/**
+ * @route GET /api/auth/google
+ * @description Initiates Google OAuth flow
+ * @access Public
+ */
+authRouter.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"], session: false })
+)
+
+/**
+ * @route GET /api/auth/google/callback
+ * @description Google OAuth callback — issues JWT and redirects to frontend
+ * @access Public
+ */
+authRouter.get(
+  "/google/callback",
+  passport.authenticate("google", { session: false, failureRedirect: "/login" }),
+  authController.googleCallbackController
+)
 
 module.exports = authRouter

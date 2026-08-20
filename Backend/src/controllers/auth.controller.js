@@ -148,6 +148,36 @@ async function logoutUserController(req, res) {
 }
 
 /**
+ * @name googleCallbackController
+ * @description handles Google OAuth callback, signs JWT and redirects to frontend
+ * @access Public (called by Passport after Google auth)
+ */
+async function googleCallbackController(req, res) {
+  try {
+    const user = req.user // set by Passport strategy
+
+    if (!user) {
+      return res.redirect(`${process.env.FRONTEND_URL}/login?error=oauth_failed`)
+    }
+
+    const token = jwt.sign(
+      { id: user._id, username: user.username },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    )
+
+    // Set cookie for same-origin and also pass token in URL for the frontend to grab
+    res.cookie("token", token, cookieOptions)
+
+    // Redirect to frontend with token in query param
+    res.redirect(`${process.env.FRONTEND_URL}/oauth/callback?token=${token}`)
+  } catch (err) {
+    console.error("googleCallbackController error:", err)
+    res.redirect(`${process.env.FRONTEND_URL}/login?error=oauth_failed`)
+  }
+}
+
+/**
  * @name getMeController
  * @description get the current logged in user details.
  * @access Private
@@ -165,7 +195,8 @@ async function getMeController(req, res) {
       user: {
         id: user._id,
         username: user.username,
-        email: user.email
+        email: user.email,
+        avatar: user.avatar || null
       }
     })
   } catch (err) {
@@ -178,5 +209,6 @@ module.exports = {
   registerUserController,
   loginUserController,
   logoutUserController,
-  getMeController
+  getMeController,
+  googleCallbackController
 }

@@ -24,6 +24,8 @@ const LiveVoiceCall = () => {
   const recognitionRef = useRef(null)
   const historyRef = useRef([])
   const statusRef = useRef(status)
+  const silenceTimerRef = useRef(null)    // fires submit after N seconds of silence
+  const lastSpeechTextRef = useRef('')   // latest transcript for silence timer callback
 
   // Keep historyRef in sync for callbacks
   useEffect(() => {
@@ -47,11 +49,33 @@ const LiveVoiceCall = () => {
     return () => clearInterval(interval)
   }, [status])
 
+  // Silence-based auto-submit: fires after SILENCE_DELAY ms of no new speech
+  const SILENCE_DELAY = 4000 // 4 seconds — enough time for natural pauses
+
+  const clearSilenceTimer = useCallback(() => {
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current)
+      silenceTimerRef.current = null
+    }
+  }, [])
+
+  const startSilenceTimer = useCallback((text) => {
+    clearSilenceTimer()
+    if (!text.trim()) return
+    silenceTimerRef.current = setTimeout(() => {
+      // Auto-submit after silence if we have text and are still listening
+      if (lastSpeechTextRef.current.trim() && statusRef.current === 'connected') {
+        if (recognitionRef.current) recognitionRef.current.stop()
+        handleUserAnswerSubmitted(lastSpeechTextRef.current.trim())
+      }
+    }, SILENCE_DELAY)
+  }, [clearSilenceTimer]) // handleUserAnswerSubmitted added below
+
   // Initialize Speech Recognition
   useEffect(() => {
     if (isSpeechSupported) {
       const rec = new SpeechRecognition()
-      rec.continuous = false // Turn-based conversation
+      rec.continuous = true      // Keep listening through natural pauses
       rec.interimResults = true
       rec.lang = 'en-US'
 
@@ -67,27 +91,36 @@ const LiveVoiceCall = () => {
           .map(result => result.transcript)
           .join('')
         setCurrentSpeechText(transcript)
+        lastSpeechTextRef.current = transcript
+        // Reset silence timer every time new speech comes in
+        startSilenceTimer(transcript)
       }
 
       rec.onerror = (event) => {
+        if (event.error === 'no-speech') return // ignore no-speech, keep running
         console.error('Speech recognition error in call:', event.error)
         setIsListening(false)
       }
 
       rec.onend = () => {
-        setIsListening(false)
+        // continuous=true recognition can still end (e.g. after ~60s or on error)
+        // Restart it if we're still in a listening state
+        if (statusRef.current === 'connected') {
+          try { rec.start() } catch(e) { /* already running */ }
+        } else {
+          setIsListening(false)
+        }
       }
 
       recognitionRef.current = rec
     }
 
     return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.abort()
-      }
+      clearSilenceTimer()
+      recognitionRef.current?.abort()
       window.speechSynthesis?.cancel()
     }
-  }, [])
+  }, [startSilenceTimer, clearSilenceTimer])
 
   const formatTime = (secs) => {
     const mins = Math.floor(secs / 60)
@@ -183,12 +216,14 @@ const LiveVoiceCall = () => {
     }
   }, [report?.jobDescription, report?.resume, speakText])
 
-  // Process User Answer when recognition ends
-  useEffect(() => {
-    if (!isListening && currentSpeechText.trim() && status === 'connected' && !isAiSpeaking && !isGeneratingReply) {
-      handleUserAnswerSubmitted(currentSpeechText.trim())
-    }
-  }, [isListening, currentSpeechText, isAiSpeaking, isGeneratingReply, status, handleUserAnswerSubmitted])
+  // Manual submit — user clicks "Done Answering" button
+  const handleManualSubmit = useCallback(() => {
+    clearSilenceTimer()
+    const text = lastSpeechTextRef.current.trim()
+    if (!text) return
+    if (recognitionRef.current) recognitionRef.current.stop()
+    handleUserAnswerSubmitted(text)
+  }, [clearSilenceTimer, handleUserAnswerSubmitted])
 
   // End Call / Hang Up
   const handleHangUp = () => {
@@ -240,7 +275,19 @@ const LiveVoiceCall = () => {
         <span className="content-header__count">Interactive Dialogue</span>
       </div>
 
-      {status === 'idle' && (
+      {!isSpeechSupported && (
+        <div className="q-card" style={{ borderLeft: '4px solid #ef4444' }}>
+          <div className="q-card__body">
+            <h3 style={{ color: '#ef4444', marginBottom: '8px' }}>⚠️ Browser Not Supported</h3>
+            <p style={{ color: '#9ca3af', lineHeight: '1.6' }}>
+              Your current browser does not support the Web Speech API required for voice interviews. 
+              Please switch to <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong> on a desktop to use this feature.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {isSpeechSupported && status === 'idle' && (
         <div className="call-lobby">
           <div className="lobby-icon">📞</div>
           <h3>Simulate a Real Phone Interview</h3>
@@ -307,9 +354,19 @@ const LiveVoiceCall = () => {
             {currentSpeechText && (
               <p className="interim-text">"{currentSpeechText}"</p>
             )}
+            {isListening && !isAiSpeaking && !isGeneratingReply && (
+              <p className="silence-hint">⏱ Auto-submits after 4s of silence, or click below</p>
+            )}
           </div>
 
           {error && <p className="call-error">{error}</p>}
+
+          {/* Manual submit button — lets user control when their answer is sent */}
+          {isListening && !isAiSpeaking && !isGeneratingReply && currentSpeechText && (
+            <button onClick={handleManualSubmit} className="button primary-button done-btn">
+              ✅ Done Answering
+            </button>
+          )}
 
           <button onClick={handleHangUp} className="hangup-btn">
             🛑 Hang Up

@@ -30,6 +30,8 @@ const VideoInterview = () => {
   const historyRef = useRef([])
   const statusRef = useRef(status)
   const mutedRef = useRef(isMuted)
+  const silenceTimerRef = useRef(null)
+  const lastSpeechTextRef = useRef('')
 
   useEffect(() => {
     historyRef.current = history
@@ -60,10 +62,34 @@ const VideoInterview = () => {
     }
   }, [status])
 
+  const SILENCE_DELAY = 4000
+
+  const clearSilenceTimer = useCallback(() => {
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current)
+      silenceTimerRef.current = null
+    }
+  }, [])
+
+  const startSilenceTimer = useCallback((text) => {
+    clearSilenceTimer()
+    if (!text.trim()) return
+    silenceTimerRef.current = setTimeout(() => {
+      if (lastSpeechTextRef.current.trim() && statusRef.current === 'connected' && !mutedRef.current) {
+        if (recognitionRef.current) recognitionRef.current.stop()
+        // handleUserAnswerSubmitted is defined below — accessed via ref to avoid circular dep
+        handleUserAnswerSubmittedRef.current?.(lastSpeechTextRef.current.trim())
+      }
+    }, SILENCE_DELAY)
+  }, [clearSilenceTimer])
+
+  // Ref so silence timer can call it without circular deps
+  const handleUserAnswerSubmittedRef = useRef(null)
+
   useEffect(() => {
     if (isSpeechSupported) {
       const rec = new SpeechRecognition()
-      rec.continuous = false
+      rec.continuous = true       // Keep listening through natural pauses
       rec.interimResults = true
       rec.lang = 'en-US'
 
@@ -78,11 +104,13 @@ const VideoInterview = () => {
           .map(result => result[0])
           .map(result => result.transcript)
           .join('')
-
         setCurrentSpeechText(transcript)
+        lastSpeechTextRef.current = transcript
+        startSilenceTimer(transcript)
       }
 
       rec.onerror = (event) => {
+        if (event.error === 'no-speech') return
         console.error('Video interview speech recognition error:', event.error)
         setIsListening(false)
         if (event.error !== 'no-speech') {
@@ -91,18 +119,24 @@ const VideoInterview = () => {
       }
 
       rec.onend = () => {
-        setIsListening(false)
+        // Restart if still connected and not muted
+        if (statusRef.current === 'connected' && !mutedRef.current) {
+          try { rec.start() } catch(e) { /* already running */ }
+        } else {
+          setIsListening(false)
+        }
       }
 
       recognitionRef.current = rec
     }
 
     return () => {
+      clearSilenceTimer()
       recognitionRef.current?.abort()
       window.speechSynthesis?.cancel()
       stopCamera()
     }
-  }, [])
+  }, [startSilenceTimer, clearSilenceTimer])
 
   const formatTime = (secs) => {
     const mins = Math.floor(secs / 60)
@@ -196,11 +230,19 @@ const VideoInterview = () => {
     }
   }, [report?.jobDescription, report?.resume, speakText, startListening])
 
+  // Keep ref in sync so silence timer can call it
   useEffect(() => {
-    if (!isListening && currentSpeechText.trim() && status === 'connected' && !isAiSpeaking && !isGeneratingReply) {
-      handleUserAnswerSubmitted(currentSpeechText.trim())
-    }
-  }, [currentSpeechText, handleUserAnswerSubmitted, isAiSpeaking, isGeneratingReply, isListening, status])
+    handleUserAnswerSubmittedRef.current = handleUserAnswerSubmitted
+  }, [handleUserAnswerSubmitted])
+
+  // Manual submit — user clicks "Done Answering"
+  const handleManualSubmit = useCallback(() => {
+    clearSilenceTimer()
+    const text = lastSpeechTextRef.current.trim()
+    if (!text) return
+    recognitionRef.current?.stop()
+    handleUserAnswerSubmitted(text)
+  }, [clearSilenceTimer, handleUserAnswerSubmitted])
 
   const handleStartInterview = async () => {
     if (!isSpeechSupported) {
@@ -310,7 +352,19 @@ const VideoInterview = () => {
         <span className="content-header__count">Camera + Voice</span>
       </div>
 
-      {status === 'idle' && (
+      {!isSpeechSupported && (
+        <div className="q-card" style={{ borderLeft: '4px solid #ef4444', marginBottom: '24px' }}>
+          <div className="q-card__body">
+            <h3 style={{ color: '#ef4444', marginBottom: '8px' }}>⚠️ Browser Not Supported</h3>
+            <p style={{ color: '#9ca3af', lineHeight: '1.6' }}>
+              Your current browser does not support the Web Speech API required for video interviews. 
+              Please switch to <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong> on a desktop to use this feature.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {isSpeechSupported && status === 'idle' && (
         <div className="video-lobby">
           <div className="video-lobby__preview">
             <div className="video-lobby__avatar">AI</div>
@@ -404,10 +458,18 @@ const VideoInterview = () => {
             <button onClick={handleToggleCamera} className={`video-control ${isCameraOff ? 'active' : ''}`}>
               {isCameraOff ? 'Camera On' : 'Camera Off'}
             </button>
+            {isListening && !isAiSpeaking && !isGeneratingReply && currentSpeechText && (
+              <button onClick={handleManualSubmit} className="video-control done-answer-btn">
+                ✅ Done Answering
+              </button>
+            )}
             <button onClick={handleEndInterview} className="video-control danger">
               End Interview
             </button>
           </div>
+          {isListening && !isAiSpeaking && !isGeneratingReply && (
+            <p className="silence-hint">⏱ Auto-submits after 4s of silence, or click Done Answering</p>
+          )}
         </div>
       )}
 

@@ -174,9 +174,15 @@ $color-low: #ff4d4d;
     cursor: pointer;
     transition: background-color 0.2s, border-color 0.2s;
 
-    &:hover {
+    &:hover:not(.record-btn--disabled) {
       background-color: rgba($accent, 0.05);
       border-color: $accent;
+    }
+
+    &--disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      border-color: transparent;
     }
 
     &--active {

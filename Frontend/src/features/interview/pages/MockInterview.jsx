@@ -164,6 +164,18 @@ const MockInterview = () => {
         Select a question, record or type your answer, and receive real-time scoring, filler word analysis, and suggestions.
       </p>
 
+      {!isSpeechSupported && (
+        <div className="q-card" style={{ borderLeft: '4px solid #facc15', marginBottom: '24px' }}>
+          <div className="q-card__body">
+            <h3 style={{ color: '#facc15', marginBottom: '8px' }}>⚠️ Voice Input Disabled</h3>
+            <p style={{ color: '#9ca3af', lineHeight: '1.6' }}>
+              Your current browser does not support the Web Speech API required for voice recording. 
+              You can still type your answers below, or switch to <strong>Google Chrome</strong> / <strong>Microsoft Edge</strong> on a desktop for the full experience.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Main Grid */}
       <div className="simulator-grid">
         
@@ -216,8 +228,9 @@ const MockInterview = () => {
             <div className="recording-controls">
               <button
                 onClick={toggleRecording}
-                className={`record-btn ${isRecording ? 'record-btn--active' : ''}`}
-                title={isRecording ? 'Stop Recording' : 'Start Voice Input'}
+                disabled={!isSpeechSupported}
+                className={`record-btn ${isRecording ? 'record-btn--active' : ''} ${!isSpeechSupported ? 'record-btn--disabled' : ''}`}
+                title={!isSpeechSupported ? 'Browser Not Supported' : isRecording ? 'Stop Recording' : 'Start Voice Input'}
               >
                 <span className="record-btn__icon">
                   {isRecording ? (
