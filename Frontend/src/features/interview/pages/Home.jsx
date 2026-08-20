@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react'
 import "../style/home.scss"
 import { useInterview } from '../hooks/useInterview.js'
-import { useNavigate } from 'react-router'
+import { useNavigate, Link } from 'react-router'
 import { useAuth } from '../../auth/hooks/useAuth'
+import AnalyticsDashboard from '../components/AnalyticsDashboard'
 
 const Home = () => {
   const { loading, generateReport, reports } = useInterview()
@@ -192,6 +193,9 @@ const Home = () => {
         </div>
       </div>
 
+      {/* Analytics Dashboard */}
+      <AnalyticsDashboard reports={reports} />
+
       {/* Recent Reports */}
 
       {reports?.length > 0 && (
@@ -223,9 +227,9 @@ const Home = () => {
 
       {/* Page Footer */}
       <footer className='page-footer'>
-        <a href='#'>Privacy Policy</a>
-        <a href='#'>Terms of Service</a>
-        <a href='#'>Help Center</a>
+        <Link to='/privacy'>Privacy Policy</Link>
+        <Link to='/terms'>Terms of Service</Link>
+        <Link to='/help'>Help Center</Link>
       </footer>
     </div>
   )

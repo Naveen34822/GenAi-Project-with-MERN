@@ -1,0 +1,133 @@
+.legal-page {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 3rem;
+  color: #e6edf3;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+
+  &__header {
+    text-align: center;
+    margin-bottom: 2rem;
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      color: rgba(240, 244, 255, 0.6);
+      font-size: 1rem;
+    }
+  }
+
+  &__content {
+    h2 {
+      font-size: 1.5rem;
+      color: #a5b4fc;
+      margin-top: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    p {
+      color: rgba(240, 244, 255, 0.8);
+      line-height: 1.7;
+      margin-bottom: 1rem;
+    }
+
+    ul {
+      list-style-type: disc;
+      padding-left: 1.5rem;
+      margin-bottom: 1rem;
+      color: rgba(240, 244, 255, 0.8);
+      
+      li {
+        margin-bottom: 0.5rem;
+        line-height: 1.6;
+      }
+    }
+  }
+
+  .accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    &__item {
+      background: rgba(30, 35, 50, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: rgba(40, 45, 60, 0.7);
+        border-color: rgba(255, 255, 255, 0.1);
+      }
+    }
+
+    &__header {
+      width: 100%;
+      text-align: left;
+      padding: 1.25rem 1.5rem;
+      background: transparent;
+      border: none;
+      color: #e6edf3;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      span.icon {
+        font-size: 1.2rem;
+        color: #a5b4fc;
+        transition: transform 0.3s ease;
+      }
+
+      &.active span.icon {
+        transform: rotate(180deg);
+      }
+    }
+
+    &__content {
+      padding: 0 1.5rem 1.25rem 1.5rem;
+      color: rgba(240, 244, 255, 0.7);
+      line-height: 1.6;
+      display: none;
+
+      &.open {
+        display: block;
+        animation: fadeIn 0.3s ease-in-out;
+      }
+    }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  &__back {
+    margin-top: 2rem;
+    text-align: center;
+    
+    a {
+      color: #a5b4fc;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        color: #c7d2fe;
+        text-decoration: underline;
+      }
+    }
+  }
+}

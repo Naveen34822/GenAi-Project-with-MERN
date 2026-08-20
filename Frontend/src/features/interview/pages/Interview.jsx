@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import html2pdf from 'html2pdf.js'
 import '../style/interview.scss'
 import { useInterview } from '../hooks/useInterview.js'
 import AtsScore from './AtsScore'
@@ -142,6 +143,27 @@ const Interview = () => {
     report.matchScore >= 80 ? 'score--high' :
       report.matchScore >= 60 ? 'score--mid' : 'score--low'
 
+  const exportToPDF = () => {
+    // Scroll to top to prevent html2canvas clipping
+    window.scrollTo(0, 0);
+    
+    const element = document.getElementById('report-content');
+    const opt = {
+      margin:       10,
+      filename:     `Interview_Report_${report.title?.replace(/\s+/g, '_')}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { 
+        scale: 2, 
+        useCORS: true, 
+        logging: false,
+        backgroundColor: '#0d1117' // Force GitHub dark background so white text is visible
+      },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    html2pdf().set(opt).from(element).save();
+  };
+
   return (
     <div className='interview-page'>
       <div className='interview-layout'>
@@ -161,12 +183,38 @@ const Interview = () => {
               </button>
             ))}
           </div>
+          
+          <div className="nav-footer" style={{ marginTop: 'auto', padding: '1.5rem' }}>
+             <button 
+                onClick={exportToPDF}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '8px',
+                  color: '#a5b4fc',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(165, 180, 252, 0.1)'; e.currentTarget.style.borderColor = '#a5b4fc'; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+             >
+               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+               Export PDF
+             </button>
+          </div>
         </nav>
 
         <div className='interview-divider' />
 
         {/* ── Center Content ── */}
-        <main className='interview-content'>
+        <main className='interview-main' id="report-content">
           {activeNav === 'technical' && (
             <section>
               <div className='content-header'>

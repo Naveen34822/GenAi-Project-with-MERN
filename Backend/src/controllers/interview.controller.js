@@ -2,6 +2,7 @@ const pdfParseModule = require("pdf-parse")
 const pdfParse = pdfParseModule.default || pdfParseModule
 const { generateInterviewReport, evaluateAnswer, generateLiveChatReply } = require("../services/ai.service")
 const interviewReportModel = require("../models/interviewReport.model")
+const { sendInterviewReportEmail } = require("../services/email.service")
 
 async function generateInterViewReportController(req, res) {
   try {
@@ -44,6 +45,20 @@ async function generateInterViewReportController(req, res) {
       message: "Interview report generated successfully.",
       interviewReport
     })
+
+    // 🔥 Send email notification in the background
+    // We don't await this because we don't want to block the HTTP response!
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173"
+    const reportLink = `${frontendUrl}/interview/${interviewReport._id}`
+    const userName = req.user.username || req.user.email.split('@')[0]
+    
+    sendInterviewReportEmail(
+      req.user.email,
+      userName,
+      interviewReport.jobPosition || "Software Engineer",
+      interviewReport.matchScore || 0,
+      reportLink
+    ).catch(e => console.error("Background email failed:", e))
   } catch (err) {
     console.error("generateInterViewReportController error:", err)
     res.status(500).json({ message: "Failed to generate interview report." })

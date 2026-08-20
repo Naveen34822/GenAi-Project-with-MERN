@@ -5,8 +5,23 @@ import OAuthCallback from "./features/auth/pages/OAuthCallback"
 import Protected from "./features/auth/components/Protected"
 import Home from "./features/interview/pages/Home"
 import Interview from "./features/interview/pages/Interview"
+import Privacy from "./features/interview/pages/Privacy"
+import Terms from "./features/interview/pages/Terms"
+import Help from "./features/interview/pages/Help"
 
 export const router = createBrowserRouter([
+  {
+    path: "/privacy",
+    element: <Privacy />
+  },
+  {
+    path: "/terms",
+    element: <Terms />
+  },
+  {
+    path: "/help",
+    element: <Help />
+  },
   {
     path: "/login",
     element: <Login />
