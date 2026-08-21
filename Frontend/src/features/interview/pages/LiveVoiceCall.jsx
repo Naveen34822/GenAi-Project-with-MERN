@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import '../style/liveVoiceCall.scss'
 import { useInterview } from '../hooks/useInterview'
-import { generateLiveVoiceChatReply, evaluateInterviewAnswer } from '../services/interview.api'
+import { generateLiveVoiceChatReply, evaluateInterviewAnswer, sendTranscriptEmail } from '../services/interview.api'
+import toast from 'react-hot-toast'
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
 const isSpeechSupported = !!SpeechRecognition
@@ -52,6 +53,36 @@ const LiveVoiceCall = () => {
   // Silence-based auto-submit: fires after SILENCE_DELAY ms of no new speech
   const SILENCE_DELAY = 4000 // 4 seconds — enough time for natural pauses
 
+  const handleEndCall = useCallback(() => {
+    window.speechSynthesis?.cancel()
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
+    setStatus('ended')
+    setAiSubtitle('')
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop() } catch (e) {}
+    }
+    setIsAiSpeaking(false)
+    setIsGeneratingReply(false)
+    setIsListening(false)
+
+    // Automatically send the transcript email when the call ends!
+    if (historyRef.current.length > 0) {
+      const toastId = toast.loading("Emailing your interview transcript...");
+      sendTranscriptEmail({
+        transcript: historyRef.current,
+        role: report?.jobPosition || "Software Engineer"
+      }).then(() => {
+        toast.success("Transcript sent to your email!", { id: toastId });
+      }).catch((err) => {
+        toast.error("Failed to send transcript.", { id: toastId });
+      });
+    }
+  }, [report?.jobPosition])
+
+  const handleHangUp = () => {
+    handleEndCall();
+  };
+
   const clearSilenceTimer = useCallback(() => {
     if (silenceTimerRef.current) {
       clearTimeout(silenceTimerRef.current)
@@ -69,7 +100,7 @@ const LiveVoiceCall = () => {
         handleUserAnswerSubmitted(lastSpeechTextRef.current.trim())
       }
     }, SILENCE_DELAY)
-  }, [clearSilenceTimer]) // handleUserAnswerSubmitted added below
+  }, [clearSilenceTimer])
 
   // Initialize Speech Recognition
   useEffect(() => {
@@ -225,18 +256,7 @@ const LiveVoiceCall = () => {
     handleUserAnswerSubmitted(text)
   }, [clearSilenceTimer, handleUserAnswerSubmitted])
 
-  // End Call / Hang Up
-  const handleHangUp = () => {
-    setStatus('ended')
-    window.speechSynthesis?.cancel()
-    if (recognitionRef.current) {
-      recognitionRef.current.stop()
-    }
-    setIsAiSpeaking(false)
-    setIsGeneratingReply(false)
-    setIsListening(false)
-    setAiSubtitle('')
-  }
+  // Duplicate handleHangUp removed
 
   // Evaluate Call Performance
   const handleEvaluateCall = async () => {

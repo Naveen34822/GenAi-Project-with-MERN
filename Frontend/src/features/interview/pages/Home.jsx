@@ -4,6 +4,7 @@ import { useInterview } from '../hooks/useInterview.js'
 import { useNavigate, Link } from 'react-router'
 import { useAuth } from '../../auth/hooks/useAuth'
 import AnalyticsDashboard from '../components/AnalyticsDashboard'
+import toast from 'react-hot-toast'
 
 const Home = () => {
   const { loading, generateReport, reports } = useInterview()
@@ -24,24 +25,26 @@ const Home = () => {
   const handleGenerateReport = async () => {
     const resumeFile = resumeInputRef.current.files[0]
     if (!jobDescription.trim()) {
-      alert("Please enter a job description.")
+      toast.error("Please enter a job description.")
       return
     }
     if (!resumeFile && !selfDescription.trim()) {
-      alert("Please upload a resume or enter a self description.")
+      toast.error("Please upload a resume or enter a self description.")
       return
     }
     if (resumeFile && !resumeFile.name.endsWith(".pdf")) {
-      alert("Only PDF files are supported.")
+      toast.error("Only PDF files are supported.")
       return
     }
 
+    const toastId = toast.loading("Analyzing your profile & generating strategy...");
     const data = await generateReport({ jobDescription, selfDescription, resumeFile })
 
     if (data?._id) {
+      toast.success("ATS Score and Report sent to your email!", { id: toastId })
       navigate(`/interview/${data._id}`)
     } else {
-      alert("Something went wrong generating your report. Please try again.")
+      toast.error("Something went wrong generating your report. Please try again.", { id: toastId })
     }
   }
 

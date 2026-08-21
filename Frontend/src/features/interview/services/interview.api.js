@@ -72,3 +72,11 @@ export const generateLiveVoiceChatReply = async ({ history, jobDescription, resu
     const response = await api.post("/api/interview/chat", { history, jobDescription, resume })
     return response.data
 }
+
+/**
+ * @description Service to send the full interview transcript to the user via email
+ */
+export const sendTranscriptEmail = async ({ transcript, role }) => {
+    const response = await api.post("/api/interview/send-transcript", { transcript, role })
+    return response.data
+}

@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import '../style/videoInterview.scss'
 import { useInterview } from '../hooks/useInterview'
-import { evaluateInterviewAnswer, generateLiveVoiceChatReply } from '../services/interview.api'
+import { evaluateInterviewAnswer, generateLiveVoiceChatReply, sendTranscriptEmail } from '../services/interview.api'
+import toast from 'react-hot-toast'
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
 const isSpeechSupported = !!SpeechRecognition
@@ -306,6 +307,19 @@ const VideoInterview = () => {
     setIsGeneratingReply(false)
     setAiSubtitle('')
     setCurrentSpeechText('')
+
+    // Automatically send the transcript email when the video interview ends!
+    if (historyRef.current.length > 0) {
+      const toastId = toast.loading("Emailing your interview transcript...");
+      sendTranscriptEmail({
+        transcript: historyRef.current,
+        role: report?.jobPosition || "Software Engineer"
+      }).then(() => {
+        toast.success("Transcript sent to your email!", { id: toastId });
+      }).catch((err) => {
+        toast.error("Failed to send transcript.", { id: toastId });
+      });
+    }
   }
 
   const handleEvaluateInterview = async () => {

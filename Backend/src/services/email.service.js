@@ -101,6 +101,56 @@ const sendInterviewReportEmail = async (userEmail, userName, role, score, report
     }
 };
 
-module.exports = {
-    sendInterviewReportEmail
+/**
+ * Sends the full interview transcript (Q&A) to the user via email.
+ */
+const sendInterviewTranscriptEmail = async (userEmail, userName, role, transcript) => {
+    if (!transporter) {
+        console.warn("Transporter not ready yet.");
+        return;
+    }
+
+    try {
+        // Build the HTML for the chat bubbles
+        const chatHtml = transcript.map(msg => {
+            const isAI = msg.role === 'model';
+            return `
+                <div style="margin-bottom: 15px; text-align: ${isAI ? 'left' : 'right'};">
+                    <div style="display: inline-block; max-width: 80%; padding: 12px 16px; border-radius: ${isAI ? '12px 12px 12px 2px' : '12px 12px 2px 12px'}; background-color: ${isAI ? '#1e293b' : '#4f46e5'}; color: ${isAI ? '#e2e8f0' : '#ffffff'}; border: 1px solid ${isAI ? '#334155' : 'transparent'}; font-size: 14px; line-height: 1.5; text-align: left;">
+                        <strong style="display: block; margin-bottom: 4px; font-size: 12px; color: ${isAI ? '#a5b4fc' : '#c7d2fe'};">
+                            ${isAI ? '🤖 AI Interviewer' : '👤 You'}
+                        </strong>
+                        ${msg.text}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        const info = await transporter.sendMail({
+            from: '"AI Interview Platform" <no-reply@ai-interview.com>',
+            to: userEmail,
+            subject: `Your Interview Transcript: ${role}`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #0f172a; padding: 20px; border-radius: 10px; color: #f8fafc;">
+                    <h2 style="color: #a5b4fc; text-align: center; margin-bottom: 5px;">Interview Transcript</h2>
+                    <p style="text-align: center; color: #94a3b8; font-size: 14px; margin-top: 0;">${role} Role</p>
+                    
+                    <div style="background-color: #1e293b; padding: 20px; border-radius: 8px; margin: 30px 0; border: 1px solid #334155;">
+                        ${chatHtml}
+                    </div>
+                    
+                    <p style="text-align: center; color: #94a3b8; font-size: 12px;">Great job completing the interview!</p>
+                </div>
+            `,
+        });
+
+        console.log(`✉️ Transcript Email Sent!`);
+        if (!process.env.SMTP_USER) {
+            console.log(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
+        }
+    } catch (error) {
+        console.error("Error sending transcript email:", error);
+    }
 };
+
+module.exports = { sendInterviewReportEmail , sendInterviewTranscriptEmail };

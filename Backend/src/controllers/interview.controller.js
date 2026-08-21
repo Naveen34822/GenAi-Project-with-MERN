@@ -2,7 +2,8 @@ const pdfParseModule = require("pdf-parse")
 const pdfParse = pdfParseModule.default || pdfParseModule
 const { generateInterviewReport, evaluateAnswer, generateLiveChatReply } = require("../services/ai.service")
 const interviewReportModel = require("../models/interviewReport.model")
-const { sendInterviewReportEmail } = require("../services/email.service")
+const userModel = require("../models/user.model")
+const { sendInterviewReportEmail, sendInterviewTranscriptEmail } = require("../services/email.service")
 
 async function generateInterViewReportController(req, res) {
   try {
@@ -50,15 +51,19 @@ async function generateInterViewReportController(req, res) {
     // We don't await this because we don't want to block the HTTP response!
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173"
     const reportLink = `${frontendUrl}/interview/${interviewReport._id}`
-    const userName = req.user.username || req.user.email.split('@')[0]
     
-    sendInterviewReportEmail(
-      req.user.email,
-      userName,
-      interviewReport.jobPosition || "Software Engineer",
-      interviewReport.matchScore || 0,
-      reportLink
-    ).catch(e => console.error("Background email failed:", e))
+    // Fetch the full user from the database because req.user (from JWT) doesn't contain the email
+    userModel.findById(req.user.id).then(user => {
+      if (user && user.email) {
+        sendInterviewReportEmail(
+          user.email,
+          user.username || "there",
+          interviewReport.jobPosition || "Software Engineer",
+          interviewReport.matchScore || 0,
+          reportLink
+        ).catch(e => console.error("Background email failed:", e))
+      }
+    }).catch(e => console.error("Failed to fetch user for email:", e))
   } catch (err) {
     console.error("generateInterViewReportController error:", err)
     res.status(500).json({ message: "Failed to generate interview report." })
@@ -140,7 +145,35 @@ async function generateLiveChatReplyController(req, res) {
     })
   } catch (err) {
     console.error("generateLiveChatReplyController error:", err)
-    res.status(500).json({ message: "Failed to generate chat reply." })
+    res.status(500).json({ message: "Failed to generate AI reply." })
+  }
+}
+
+async function sendTranscriptEmailController(req, res) {
+  try {
+    const { transcript, role } = req.body;
+    
+    if (!transcript || !Array.isArray(transcript)) {
+      return res.status(400).json({ message: "Transcript array is required." });
+    }
+
+    const user = await userModel.findById(req.user.id);
+    if (!user || !user.email) {
+      return res.status(400).json({ message: "User email not found." });
+    }
+
+    // Fire and forget
+    sendInterviewTranscriptEmail(
+      user.email,
+      user.username || "there",
+      role || "Software Engineer",
+      transcript
+    ).catch(e => console.error("Transcript email failed:", e));
+
+    res.status(200).json({ message: "Transcript email sent successfully!" });
+  } catch (err) {
+    console.error("sendTranscriptEmailController error:", err);
+    res.status(500).json({ message: "Failed to send transcript email." });
   }
 }
 
@@ -149,5 +182,6 @@ module.exports = {
   getInterviewReportByIdController,
   getAllInterviewReportsController,
   evaluateAnswerController,
-  generateLiveChatReplyController
+  generateLiveChatReplyController,
+  sendTranscriptEmailController
 }

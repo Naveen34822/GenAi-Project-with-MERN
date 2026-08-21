@@ -44,4 +44,11 @@ interviewRouter.post("/evaluate", authMiddleware.authUser, interviewController.e
  */
 interviewRouter.post("/chat", authMiddleware.authUser, interviewController.generateLiveChatReplyController)
 
+/**
+ * @route POST /api/interview/send-transcript
+ * @description Send full interview transcript to the user's email
+ * @access private
+ */
+interviewRouter.post("/send-transcript", authMiddleware.authUser, interviewController.sendTranscriptEmailController)
+
 module.exports = interviewRouter

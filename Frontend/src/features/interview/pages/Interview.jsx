@@ -144,24 +144,82 @@ const Interview = () => {
       report.matchScore >= 60 ? 'score--mid' : 'score--low'
 
   const exportToPDF = () => {
-    // Scroll to top to prevent html2canvas clipping
     window.scrollTo(0, 0);
-    
     const element = document.getElementById('report-content');
+    
+    // Temporarily remove overflow and height constraints so html2canvas can capture the full height
+    const originalOverflow = element.style.overflow;
+    const originalMaxHeight = element.style.maxHeight;
+    const originalHeight = element.style.height;
+    const originalMinHeight = element.style.minHeight;
+    const originalBackground = element.style.background;
+    
+    element.style.overflow = 'visible';
+    element.style.maxHeight = 'none';
+    element.style.height = 'auto';
+    element.style.background = '#0d1117'; // Force dark background on the element directly
+    element.style.color = '#f0f4ff'; // Force default text color to white
+    
+    // Force the element to be at least as tall as an A4 page (aspect ratio 1.414) 
+    // so it doesn't leave a white gap at the bottom of the PDF
+    element.style.minHeight = `${element.scrollWidth * 1.414}px`;
+
+    // html2canvas cannot render background-clip: text gradients properly, so we must disable them temporarily
+    const headers = element.querySelectorAll('h2');
+    const originalHeaderStyles = [];
+    headers.forEach((h2, i) => {
+      originalHeaderStyles.push({
+        background: h2.style.background,
+        webkitBackgroundClip: h2.style.webkitBackgroundClip,
+        webkitTextFillColor: h2.style.webkitTextFillColor
+      });
+      h2.style.background = 'none';
+      h2.style.webkitBackgroundClip = 'initial';
+      h2.style.webkitTextFillColor = '#f0f4ff';
+    });
+
+    // Also force question text explicitly because html2canvas often defaults to black
+    const questions = element.querySelectorAll('.q-card__question');
+    const originalQuestionStyles = [];
+    questions.forEach((q, i) => {
+      originalQuestionStyles.push(q.style.color);
+      q.style.color = '#f0f4ff';
+    });
+
     const opt = {
-      margin:       10,
+      margin:       0, // Removed margin to prevent white borders
       filename:     `Interview_Report_${report.title?.replace(/\s+/g, '_')}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
       html2canvas:  { 
         scale: 2, 
         useCORS: true, 
         logging: false,
-        backgroundColor: '#0d1117' // Force GitHub dark background so white text is visible
+        backgroundColor: '#0d1117',
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight
       },
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     
-    html2pdf().set(opt).from(element).save();
+    html2pdf().set(opt).from(element).save().then(() => {
+      // Restore original styles
+      element.style.overflow = originalOverflow;
+      element.style.maxHeight = originalMaxHeight;
+      element.style.height = originalHeight;
+      element.style.minHeight = originalMinHeight;
+      element.style.background = originalBackground;
+      element.style.color = ''; // Remove explicit color
+      
+      headers.forEach((h2, i) => {
+        h2.style.background = originalHeaderStyles[i].background;
+        h2.style.webkitBackgroundClip = originalHeaderStyles[i].webkitBackgroundClip;
+        h2.style.webkitTextFillColor = originalHeaderStyles[i].webkitTextFillColor;
+      });
+
+      questions.forEach((q, i) => {
+        q.style.color = originalQuestionStyles[i];
+      });
+    });
   };
 
   return (
