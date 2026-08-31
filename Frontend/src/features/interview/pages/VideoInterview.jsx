@@ -1,23 +1,21 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import '../style/videoInterview.scss'
 import { useInterview } from '../hooks/useInterview'
-import { evaluateInterviewAnswer, generateLiveVoiceChatReply, sendTranscriptEmail } from '../services/interview.api'
+import { generateLiveVoiceChatReply, evaluateInterviewAnswer, sendTranscriptEmail } from '../services/interview.api'
 import toast from 'react-hot-toast'
 
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-const isSpeechSupported = !!SpeechRecognition
-const isCameraSupported = !!navigator.mediaDevices?.getUserMedia
+import { useSpeechRecognition, isSpeechSupported } from '../hooks/useSpeechRecognition'
+import { useSilenceDetection } from '../hooks/useSilenceDetection'
+import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis'
+
+const isCameraSupported = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
 
 const VideoInterview = () => {
   const { report } = useInterview()
 
-  const [status, setStatus] = useState('idle')
+  const [status, setStatus] = useState('idle') // 'idle' | 'connecting' | 'connected' | 'ended'
   const [timer, setTimer] = useState(0)
   const [history, setHistory] = useState([])
-  const [currentSpeechText, setCurrentSpeechText] = useState('')
-  const [aiSubtitle, setAiSubtitle] = useState('')
-  const [isAiSpeaking, setIsAiSpeaking] = useState(false)
-  const [isListening, setIsListening] = useState(false)
   const [isGeneratingReply, setIsGeneratingReply] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
   const [isCameraOff, setIsCameraOff] = useState(false)
@@ -27,117 +25,27 @@ const VideoInterview = () => {
 
   const videoRef = useRef(null)
   const mediaStreamRef = useRef(null)
-  const recognitionRef = useRef(null)
   const historyRef = useRef([])
   const statusRef = useRef(status)
   const mutedRef = useRef(isMuted)
-  const silenceTimerRef = useRef(null)
-  const lastSpeechTextRef = useRef('')
 
-  useEffect(() => {
-    historyRef.current = history
-  }, [history])
+  // Keep refs in sync for callbacks
+  useEffect(() => { historyRef.current = history }, [history])
+  useEffect(() => { statusRef.current = status }, [status])
+  useEffect(() => { mutedRef.current = isMuted }, [isMuted])
 
-  useEffect(() => {
-    statusRef.current = status
-  }, [status])
-
-  useEffect(() => {
-    mutedRef.current = isMuted
-  }, [isMuted])
-
+  // Timer Effect
   useEffect(() => {
     let interval = null
     if (status === 'connected') {
-      interval = setInterval(() => setTimer(prev => prev + 1), 1000)
+      interval = setInterval(() => {
+        setTimer(prev => prev + 1)
+      }, 1000)
     } else {
       setTimer(0)
     }
-
     return () => clearInterval(interval)
   }, [status])
-
-  useEffect(() => {
-    if (status === 'connected' && videoRef.current && mediaStreamRef.current) {
-      videoRef.current.srcObject = mediaStreamRef.current
-    }
-  }, [status])
-
-  const SILENCE_DELAY = 4000
-
-  const clearSilenceTimer = useCallback(() => {
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current)
-      silenceTimerRef.current = null
-    }
-  }, [])
-
-  const startSilenceTimer = useCallback((text) => {
-    clearSilenceTimer()
-    if (!text.trim()) return
-    silenceTimerRef.current = setTimeout(() => {
-      if (lastSpeechTextRef.current.trim() && statusRef.current === 'connected' && !mutedRef.current) {
-        if (recognitionRef.current) recognitionRef.current.stop()
-        // handleUserAnswerSubmitted is defined below — accessed via ref to avoid circular dep
-        handleUserAnswerSubmittedRef.current?.(lastSpeechTextRef.current.trim())
-      }
-    }, SILENCE_DELAY)
-  }, [clearSilenceTimer])
-
-  // Ref so silence timer can call it without circular deps
-  const handleUserAnswerSubmittedRef = useRef(null)
-
-  useEffect(() => {
-    if (isSpeechSupported) {
-      const rec = new SpeechRecognition()
-      rec.continuous = true       // Keep listening through natural pauses
-      rec.interimResults = true
-      rec.lang = 'en-US'
-
-      rec.onstart = () => {
-        setIsListening(true)
-        setCurrentSpeechText('')
-        setAiSubtitle('')
-      }
-
-      rec.onresult = (event) => {
-        const transcript = Array.from(event.results)
-          .map(result => result[0])
-          .map(result => result.transcript)
-          .join('')
-        setCurrentSpeechText(transcript)
-        lastSpeechTextRef.current = transcript
-        startSilenceTimer(transcript)
-      }
-
-      rec.onerror = (event) => {
-        if (event.error === 'no-speech') return
-        console.error('Video interview speech recognition error:', event.error)
-        setIsListening(false)
-        if (event.error !== 'no-speech') {
-          setError('Microphone recognition stopped. Please check your browser permissions.')
-        }
-      }
-
-      rec.onend = () => {
-        // Restart if still connected and not muted
-        if (statusRef.current === 'connected' && !mutedRef.current) {
-          try { rec.start() } catch(e) { /* already running */ }
-        } else {
-          setIsListening(false)
-        }
-      }
-
-      recognitionRef.current = rec
-    }
-
-    return () => {
-      clearSilenceTimer()
-      recognitionRef.current?.abort()
-      window.speechSynthesis?.cancel()
-      stopCamera()
-    }
-  }, [startSilenceTimer, clearSilenceTimer])
 
   const formatTime = (secs) => {
     const mins = Math.floor(secs / 60)
@@ -157,58 +65,46 @@ const VideoInterview = () => {
     if (!isCameraSupported) {
       throw new Error('Camera tools are not supported in this browser.')
     }
-
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
       audio: false
     })
-
     mediaStreamRef.current = stream
     if (videoRef.current) {
       videoRef.current.srcObject = stream
     }
   }
 
-  const startListening = useCallback(() => {
-    if (mutedRef.current || statusRef.current !== 'connected' || !recognitionRef.current) return
+  // --- HOOKS ---
 
-    try {
-      recognitionRef.current.start()
-    } catch (err) {
-      console.log('Video interview recognition already running or failed to start:', err)
+  const startSilenceTimerRef = useRef(() => {})
+
+  const {
+    isListening,
+    currentSpeechText,
+    setCurrentSpeechText,
+    startRecognition,
+    stopRecognition,
+    recognitionRef
+  } = useSpeechRecognition({
+    onSpeechResult: (text) => {
+      startSilenceTimerRef.current(text)
     }
-  }, [])
+  })
 
-  const speakText = useCallback((text) => {
-    if (!window.speechSynthesis) return
-
-    window.speechSynthesis.cancel()
-    setIsAiSpeaking(true)
-    setAiSubtitle(text)
-
-    const utterance = new SpeechSynthesisUtterance(text)
-
-    utterance.onend = () => {
-      setIsAiSpeaking(false)
-      startListening()
+  const { isAiSpeaking, aiSubtitle, speakText, cancelSpeech } = useSpeechSynthesis({
+    onSpeechEnd: () => {
+      if (statusRef.current === 'connected' && !mutedRef.current) {
+        startRecognition()
+      }
     }
-
-    utterance.onerror = (event) => {
-      console.error('Video interview speech synthesis error:', event)
-      setIsAiSpeaking(false)
-      setAiSubtitle('')
-      startListening()
-    }
-
-    window.speechSynthesis.speak(utterance)
-  }, [startListening])
+  })
 
   const handleUserAnswerSubmitted = useCallback(async (text) => {
     const userMsg = { role: 'user', text }
     const updatedHistory = [...historyRef.current, userMsg]
     setHistory(updatedHistory)
     setCurrentSpeechText('')
-    setAiSubtitle('')
     setError('')
 
     try {
@@ -218,32 +114,49 @@ const VideoInterview = () => {
         jobDescription: report?.jobDescription || '',
         resume: report?.resume || ''
       })
-
+      
       const aiMsg = { role: 'model', text: data.reply }
       setHistory(prev => [...prev, aiMsg])
-      speakText(data.reply)
+
+      if (statusRef.current === 'connected' && !mutedRef.current) {
+        speakText(data.reply)
+      }
     } catch (err) {
       console.error(err)
-      setError('The AI interviewer could not respond. Please try again.')
-      startListening()
+      toast.error('Failed to get AI response.')
+      if (statusRef.current === 'connected' && !mutedRef.current) {
+        startRecognition()
+      }
     } finally {
       setIsGeneratingReply(false)
     }
-  }, [report?.jobDescription, report?.resume, speakText, startListening])
-
-  // Keep ref in sync so silence timer can call it
+  }, [report?.jobDescription, report?.resume, speakText, cancelSpeech, setCurrentSpeechText, startRecognition])
+  
+  const handleUserAnswerSubmittedRef = useRef(handleUserAnswerSubmitted)
   useEffect(() => {
     handleUserAnswerSubmittedRef.current = handleUserAnswerSubmitted
   }, [handleUserAnswerSubmitted])
 
-  // Manual submit — user clicks "Done Answering"
-  const handleManualSubmit = useCallback(() => {
-    clearSilenceTimer()
-    const text = lastSpeechTextRef.current.trim()
-    if (!text) return
-    recognitionRef.current?.stop()
-    handleUserAnswerSubmitted(text)
-  }, [clearSilenceTimer, handleUserAnswerSubmitted])
+  const { startSilenceTimer, clearSilenceTimer, lastSpeechTextRef } = useSilenceDetection({
+    delay: 4000,
+    onSilenceTimeout: (text) => {
+      if (statusRef.current === 'connected' && !mutedRef.current) {
+        stopRecognition()
+        handleUserAnswerSubmittedRef.current(text)
+      }
+    }
+  })
+
+  useEffect(() => {
+    startSilenceTimerRef.current = startSilenceTimer
+  }, [startSilenceTimer])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => stopCamera()
+  }, [])
+
+  // --- ACTIONS ---
 
   const handleStartInterview = async () => {
     if (!isSpeechSupported) {
@@ -255,7 +168,6 @@ const VideoInterview = () => {
     setEvaluation(null)
     setHistory([])
     setCurrentSpeechText('')
-    setAiSubtitle('')
     setIsMuted(false)
     setIsCameraOff(false)
     setStatus('connecting')
@@ -277,15 +189,22 @@ const VideoInterview = () => {
     }
   }
 
+  const handleManualSubmit = useCallback(() => {
+    clearSilenceTimer()
+    const text = lastSpeechTextRef.current.trim()
+    if (!text) return
+    stopRecognition()
+    handleUserAnswerSubmitted(text)
+  }, [clearSilenceTimer, stopRecognition, handleUserAnswerSubmitted, lastSpeechTextRef])
+
   const handleToggleMute = () => {
     const nextMuted = !isMuted
     setIsMuted(nextMuted)
 
     if (nextMuted) {
-      recognitionRef.current?.abort()
-      setIsListening(false)
+      stopRecognition()
     } else if (status === 'connected' && !isAiSpeaking && !isGeneratingReply) {
-      startListening()
+      startRecognition()
     }
   }
 
@@ -299,14 +218,11 @@ const VideoInterview = () => {
 
   const handleEndInterview = () => {
     setStatus('ended')
-    window.speechSynthesis?.cancel()
-    recognitionRef.current?.abort()
+    cancelSpeech()
+    clearSilenceTimer()
+    stopRecognition()
     stopCamera()
-    setIsAiSpeaking(false)
-    setIsListening(false)
     setIsGeneratingReply(false)
-    setAiSubtitle('')
-    setCurrentSpeechText('')
 
     // Automatically send the transcript email when the video interview ends!
     if (historyRef.current.length > 0) {

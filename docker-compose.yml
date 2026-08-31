@@ -1,0 +1,63 @@
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: genai_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - genai_network
+
+  backend:
+    build: 
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: genai_backend
+    ports:
+      - "5050:5050"
+    environment:
+      - PORT=5050
+      - MONGO_URI=mongodb://mongodb:27017/interview_platform
+      - CLIENT_URL=http://localhost:5173
+      # Note: For production, use a .env file instead of hardcoding secrets here.
+      # You can create a .env in the Backend folder and uncomment the env_file line below.
+    env_file:
+      - ./Backend/.env
+    depends_on:
+      - mongodb
+    networks:
+      - genai_network
+    volumes:
+      # Mount source code for hot reloading
+      - ./Backend/src:/app/src
+      - ./Backend/server.js:/app/server.js
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    container_name: genai_frontend
+    ports:
+      - "5173:5173"
+    environment:
+      # Internal Docker networking for SSR if needed, but for Vite client-side:
+      - VITE_API_BASE_URL=http://localhost:5050/api
+    env_file:
+      - ./Frontend/.env
+    depends_on:
+      - backend
+    networks:
+      - genai_network
+    volumes:
+      # Mount source code for hot reloading
+      - ./Frontend/src:/app/src
+      - ./Frontend/index.html:/app/index.html
+      - ./Frontend/vite.config.js:/app/vite.config.js
+
+networks:
+  genai_network:
+    driver: bridge
+
+volumes:
+  mongodb_data:

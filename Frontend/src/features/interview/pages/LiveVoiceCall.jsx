@@ -4,8 +4,9 @@ import { useInterview } from '../hooks/useInterview'
 import { generateLiveVoiceChatReply, evaluateInterviewAnswer, sendTranscriptEmail } from '../services/interview.api'
 import toast from 'react-hot-toast'
 
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-const isSpeechSupported = !!SpeechRecognition
+import { useSpeechRecognition, isSpeechSupported } from '../hooks/useSpeechRecognition'
+import { useSilenceDetection } from '../hooks/useSilenceDetection'
+import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis'
 
 const LiveVoiceCall = () => {
   const { report } = useInterview()
@@ -13,20 +14,13 @@ const LiveVoiceCall = () => {
   const [status, setStatus] = useState('idle') // 'idle' | 'calling' | 'connected' | 'ended'
   const [timer, setTimer] = useState(0)
   const [history, setHistory] = useState([])
-  const [isAiSpeaking, setIsAiSpeaking] = useState(false)
   const [isGeneratingReply, setIsGeneratingReply] = useState(false)
-  const [isListening, setIsListening] = useState(false)
-  const [currentSpeechText, setCurrentSpeechText] = useState('')
-  const [aiSubtitle, setAiSubtitle] = useState('')
   const [evaluation, setEvaluation] = useState(null)
   const [evaluating, setEvaluating] = useState(false)
   const [error, setError] = useState('')
 
-  const recognitionRef = useRef(null)
   const historyRef = useRef([])
   const statusRef = useRef(status)
-  const silenceTimerRef = useRef(null)    // fires submit after N seconds of silence
-  const lastSpeechTextRef = useRef('')   // latest transcript for silence timer callback
 
   // Keep historyRef in sync for callbacks
   useEffect(() => {
@@ -50,177 +44,29 @@ const LiveVoiceCall = () => {
     return () => clearInterval(interval)
   }, [status])
 
-  // Silence-based auto-submit: fires after SILENCE_DELAY ms of no new speech
-  const SILENCE_DELAY = 4000 // 4 seconds — enough time for natural pauses
-
-  const handleEndCall = useCallback(() => {
-    window.speechSynthesis?.cancel()
-    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
-    setStatus('ended')
-    setAiSubtitle('')
-    if (recognitionRef.current) {
-      try { recognitionRef.current.stop() } catch (e) {}
-    }
-    setIsAiSpeaking(false)
-    setIsGeneratingReply(false)
-    setIsListening(false)
-
-    // Automatically send the transcript email when the call ends!
-    if (historyRef.current.length > 0) {
-      const toastId = toast.loading("Emailing your interview transcript...");
-      sendTranscriptEmail({
-        transcript: historyRef.current,
-        role: report?.jobPosition || "Software Engineer"
-      }).then(() => {
-        toast.success("Transcript sent to your email!", { id: toastId });
-      }).catch((err) => {
-        toast.error("Failed to send transcript.", { id: toastId });
-      });
-    }
-  }, [report?.jobPosition])
-
-  const handleHangUp = () => {
-    handleEndCall();
-  };
-
-  const clearSilenceTimer = useCallback(() => {
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current)
-      silenceTimerRef.current = null
-    }
-  }, [])
-
-  const startSilenceTimer = useCallback((text) => {
-    clearSilenceTimer()
-    if (!text.trim()) return
-    silenceTimerRef.current = setTimeout(() => {
-      // Auto-submit after silence if we have text and are still listening
-      if (lastSpeechTextRef.current.trim() && statusRef.current === 'connected') {
-        if (recognitionRef.current) recognitionRef.current.stop()
-        handleUserAnswerSubmitted(lastSpeechTextRef.current.trim())
-      }
-    }, SILENCE_DELAY)
-  }, [clearSilenceTimer])
-
-  // Initialize Speech Recognition
-  useEffect(() => {
-    if (isSpeechSupported) {
-      const rec = new SpeechRecognition()
-      rec.continuous = true      // Keep listening through natural pauses
-      rec.interimResults = true
-      rec.lang = 'en-US'
-
-      rec.onstart = () => {
-        setIsListening(true)
-        setCurrentSpeechText('')
-        setAiSubtitle('')
-      }
-
-      rec.onresult = (event) => {
-        const transcript = Array.from(event.results)
-          .map(result => result[0])
-          .map(result => result.transcript)
-          .join('')
-        setCurrentSpeechText(transcript)
-        lastSpeechTextRef.current = transcript
-        // Reset silence timer every time new speech comes in
-        startSilenceTimer(transcript)
-      }
-
-      rec.onerror = (event) => {
-        if (event.error === 'no-speech') return // ignore no-speech, keep running
-        console.error('Speech recognition error in call:', event.error)
-        setIsListening(false)
-      }
-
-      rec.onend = () => {
-        // continuous=true recognition can still end (e.g. after ~60s or on error)
-        // Restart it if we're still in a listening state
-        if (statusRef.current === 'connected') {
-          try { rec.start() } catch(e) { /* already running */ }
-        } else {
-          setIsListening(false)
-        }
-      }
-
-      recognitionRef.current = rec
-    }
-
-    return () => {
-      clearSilenceTimer()
-      recognitionRef.current?.abort()
-      window.speechSynthesis?.cancel()
-    }
-  }, [startSilenceTimer, clearSilenceTimer])
-
   const formatTime = (secs) => {
     const mins = Math.floor(secs / 60)
     const remaining = secs % 60
     return `${mins.toString().padStart(2, '0')}:${remaining.toString().padStart(2, '0')}`
   }
 
-  // Speak AI response and trigger recognition on completion
-  const speakText = useCallback((text) => {
-    if (!window.speechSynthesis) return
+  // --- HOOKS ---
 
-    window.speechSynthesis.cancel() // clear any queue
-    setIsAiSpeaking(true)
-    setAiSubtitle(text)
-
-    const utterance = new SpeechSynthesisUtterance(text)
-    
-    utterance.onend = () => {
-      setIsAiSpeaking(false)
-      // Automatically open the user's mic to answer
-      if (statusRef.current === 'connected' && recognitionRef.current) {
-        try {
-          recognitionRef.current.start()
-        } catch (e) {
-          console.log('Recognition already running or failed to start:', e)
-        }
+  const { isAiSpeaking, aiSubtitle, speakText, cancelSpeech } = useSpeechSynthesis({
+    onSpeechEnd: () => {
+      if (statusRef.current === 'connected') {
+        startRecognition()
       }
     }
+  })
 
-    utterance.onerror = (e) => {
-      console.error('Utterance speech synthesis error:', e)
-      setIsAiSpeaking(false)
-      setAiSubtitle('')
-    }
-
-    window.speechSynthesis.speak(utterance)
-  }, [])
-
-  // Start Voice Call
-  const handleStartCall = () => {
-    if (!isSpeechSupported) {
-      alert('Speech tools are not supported in your browser. Please use Google Chrome.')
-      return
-    }
-    setError('')
-    setEvaluation(null)
-    setHistory([])
-    setAiSubtitle('')
-    setCurrentSpeechText('')
-    setStatus('calling')
-
-    // Simulate Ringing delay
-    setTimeout(() => {
-      setStatus('connected')
-      const initialGreeting = `Hello! Welcome to your live voice interview for the ${report?.title || 'position'}. I will be your interviewer today. To start off, could you please introduce yourself and outline your experience?`
-      
-      const greetingMsg = { role: 'model', text: initialGreeting }
-      setHistory([greetingMsg])
-      speakText(initialGreeting)
-    }, 2500)
-  }
-
-  // Handle User Response
+  // We need handleUserAnswerSubmitted before silence detection
   const handleUserAnswerSubmitted = useCallback(async (text) => {
     const userMsg = { role: 'user', text }
     const updatedHistory = [...historyRef.current, userMsg]
     setHistory(updatedHistory)
     setCurrentSpeechText('')
-    setAiSubtitle('')
+    // aiSubtitle is managed by speech synthesis
 
     try {
       setIsGeneratingReply(true)
@@ -236,29 +82,101 @@ const LiveVoiceCall = () => {
     } catch (err) {
       console.error(err)
       setError('Connection interrupted. Please speak again.')
-      setIsAiSpeaking(false)
-      setAiSubtitle('')
-      // restart listening if error
-      if (recognitionRef.current) {
-        recognitionRef.current.start()
+      cancelSpeech()
+      if (statusRef.current === 'connected') {
+        startRecognition()
       }
     } finally {
       setIsGeneratingReply(false)
     }
-  }, [report?.jobDescription, report?.resume, speakText])
+  }, [report?.jobDescription, report?.resume, speakText, cancelSpeech, setCurrentSpeechText])
+  
+  // Ref for the silence timeout to access the latest submit function without circular deps
+  const handleUserAnswerSubmittedRef = useRef(handleUserAnswerSubmitted)
+  useEffect(() => {
+    handleUserAnswerSubmittedRef.current = handleUserAnswerSubmitted
+  }, [handleUserAnswerSubmitted])
 
-  // Manual submit — user clicks "Done Answering" button
+  const { startSilenceTimer, clearSilenceTimer, lastSpeechTextRef } = useSilenceDetection({
+    delay: 4000,
+    onSilenceTimeout: (text) => {
+      if (statusRef.current === 'connected') {
+        stopRecognition()
+        handleUserAnswerSubmittedRef.current(text)
+      }
+    }
+  })
+
+  const {
+    isListening,
+    currentSpeechText,
+    setCurrentSpeechText,
+    startRecognition,
+    stopRecognition,
+    recognitionRef
+  } = useSpeechRecognition({
+    onSpeechResult: (text) => {
+      startSilenceTimer(text)
+    }
+  })
+
+  // --- ACTIONS ---
+
+  const handleEndCall = useCallback(() => {
+    cancelSpeech()
+    clearSilenceTimer()
+    stopRecognition()
+    setStatus('ended')
+    setIsGeneratingReply(false)
+
+    // Automatically send the transcript email when the call ends!
+    if (historyRef.current.length > 0) {
+      const toastId = toast.loading("Emailing your interview transcript...");
+      sendTranscriptEmail({
+        transcript: historyRef.current,
+        role: report?.jobPosition || "Software Engineer"
+      }).then(() => {
+        toast.success("Transcript sent to your email!", { id: toastId });
+      }).catch((err) => {
+        toast.error("Failed to send transcript.", { id: toastId });
+      });
+    }
+  }, [report?.jobPosition, cancelSpeech, clearSilenceTimer, stopRecognition])
+
+  const handleHangUp = () => {
+    handleEndCall();
+  };
+
+  const handleStartCall = () => {
+    if (!isSpeechSupported) {
+      alert('Speech tools are not supported in your browser. Please use Google Chrome.')
+      return
+    }
+    setError('')
+    setEvaluation(null)
+    setHistory([])
+    setCurrentSpeechText('')
+    setStatus('calling')
+
+    // Simulate Ringing delay
+    setTimeout(() => {
+      setStatus('connected')
+      const initialGreeting = `Hello! Welcome to your live voice interview for the ${report?.title || 'position'}. I will be your interviewer today. To start off, could you please introduce yourself and outline your experience?`
+      
+      const greetingMsg = { role: 'model', text: initialGreeting }
+      setHistory([greetingMsg])
+      speakText(initialGreeting)
+    }, 2500)
+  }
+
   const handleManualSubmit = useCallback(() => {
     clearSilenceTimer()
     const text = lastSpeechTextRef.current.trim()
     if (!text) return
-    if (recognitionRef.current) recognitionRef.current.stop()
+    stopRecognition()
     handleUserAnswerSubmitted(text)
-  }, [clearSilenceTimer, handleUserAnswerSubmitted])
+  }, [clearSilenceTimer, stopRecognition, handleUserAnswerSubmitted, lastSpeechTextRef])
 
-  // Duplicate handleHangUp removed
-
-  // Evaluate Call Performance
   const handleEvaluateCall = async () => {
     if (history.length < 2) {
       setError('The call was too short to generate a meaningful evaluation.')
@@ -267,7 +185,6 @@ const LiveVoiceCall = () => {
     setError('')
     setEvaluating(true)
 
-    // Construct full dialogue transcript
     const transcriptText = history
       .map(msg => `${msg.role === 'user' ? 'Candidate' : 'Interviewer'}: ${msg.text}`)
       .join('\n')
@@ -381,7 +298,7 @@ const LiveVoiceCall = () => {
 
           {error && <p className="call-error">{error}</p>}
 
-          {/* Manual submit button — lets user control when their answer is sent */}
+          {/* Manual submit button */}
           {isListening && !isAiSpeaking && !isGeneratingReply && currentSpeechText && (
             <button onClick={handleManualSubmit} className="button primary-button done-btn">
               ✅ Done Answering

@@ -1,8 +1,4 @@
-const { GoogleGenAI } = require("@google/genai")
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.GOOGLE_GENAI_API_KEY
-})
+const ai = require("../config/gemini")
 
 async function generateAtsReport({ resume, jobDescription }) {
   const prompt = `You are an expert ATS (Applicant Tracking System) analyzer.
