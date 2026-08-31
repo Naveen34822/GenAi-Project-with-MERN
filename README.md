@@ -1,120 +1,137 @@
-# GenAI Interview Preparation Platform
+# GenAI Interview Preparation Platform 🚀
 
-A full-stack MERN application that provides AI-driven technical and behavioral interview practice, leveraging real-time voice, video, and text interactions.
+A modern, full-stack MERN application designed to help candidates prepare for technical and behavioral interviews. The platform leverages the Google Gemini API and Web Speech API to provide real-time voice and video mock interviews, complete with detailed ATS resume parsing and actionable feedback scorecards.
 
-## 🚀 Features
+---
 
-- **Live Video Interviews**: Practice with an AI hiring manager that asks follow-up questions using Web Speech API for real-time transcription and voice synthesis.
-- **Voice-Only Calls**: Phone-screen style interviews with a continuous back-and-forth conversational AI.
+## 🏗 System Architecture
+
+The platform follows a containerized, decoupled architecture for scalability and ease of deployment.
+
+```mermaid
+graph TD
+    %% Define Styles
+    classDef frontend fill:#3b82f6,stroke:#1d4ed8,stroke-width:2px,color:#fff;
+    classDef backend fill:#10b981,stroke:#047857,stroke-width:2px,color:#fff;
+    classDef database fill:#f59e0b,stroke:#b45309,stroke-width:2px,color:#fff;
+    classDef external fill:#8b5cf6,stroke:#5b21b6,stroke-width:2px,color:#fff;
+
+    %% Nodes
+    User(("👤 User\n(Browser)"))
+    
+    subgraph "Docker Compose Environment"
+        UI["💻 React Frontend\n(Vite + Zustand)"]:::frontend
+        API["⚙️ Node.js Backend\n(Express)"]:::backend
+        DB[("🗄️ MongoDB\n(Mongoose)")]:::database
+    end
+    
+    Gemini["🧠 Google Gemini API\n(LLM)"]:::external
+    GoogleOAuth["🔐 Google OAuth\n(Authentication)"]:::external
+
+    %% Connections
+    User -- "Web Speech API\nAudio/Video" --> UI
+    UI -- "RESTful API (JSON)\nJWT Auth" --> API
+    API -- "Read/Write" --> DB
+    API -- "Prompts & Context" --> Gemini
+    Gemini -- "AI Responses" --> API
+    API -- "Verify Token" --> GoogleOAuth
+```
+
+---
+
+## ✨ Key Features
+
+- **Live Video Interviews**: Practice with an AI hiring manager that asks follow-up questions using the Web Speech API for real-time transcription and voice synthesis.
 - **ATS Resume Parsing**: Upload a resume (PDF) and paste a job description. The AI extracts skills, matches qualifications, and generates a personalized interview plan.
 - **AI Feedback & Scoring**: Every interview generates a detailed scorecard, filler-word analysis, and actionable feedback for improvement.
-- **Secure Authentication**: JWT-based authentication with token blacklisting, plus optional Google OAuth integration.
-- **Rate Limiting**: Built-in API rate limiting to prevent abuse (general endpoints, auth, and AI-heavy endpoints).
+- **Robust Security**: Rate Limiting (anti-DDoS), JWT HttpOnly cookies, and bcrypt password hashing.
+- **Automated Testing**: 100% integration test passing rate using **Jest**, **Vitest**, and React Testing Library.
+
+---
 
 ## 🛠 Tech Stack
 
-- **Frontend**: React (Vite), React Router, SCSS, React Hot Toast
+- **Frontend**: React (Vite), React Router, SCSS, React Hot Toast, Zustand
 - **Backend**: Node.js, Express, MongoDB, Mongoose
 - **AI Integration**: `@google/genai` (Gemini API)
 - **Authentication**: Passport.js, JWT, bcryptjs
-- **Testing**: Jest, Supertest
+- **DevOps**: Docker, Docker Compose
+- **Testing**: Jest, Supertest, Vitest
 
-## 📦 Installation
+---
 
-### Prerequisites
-- Node.js v18+
-- MongoDB instance (local or Atlas)
-- Google Gemini API Key
+## 🐳 Quick Start (Docker)
 
-### Setup
+The absolute easiest way to run the entire stack (Frontend, Backend, and MongoDB) is using Docker Compose.
 
-1. **Clone the repository**
-   ```bash
-   git clone <repo-url>
-   cd "Gen Ai Proj"
-   ```
+### 1. Prerequisites
+- [Docker & Docker Desktop](https://docs.docker.com/get-docker/) installed and running.
+- A Google Gemini API Key.
 
-2. **Backend Setup**
+### 2. Environment Setup
+Create `.env` files in both the `Frontend` and `Backend` directories. You can copy the provided templates:
+```bash
+cp Backend/.env.example Backend/.env
+cp Frontend/.env.example Frontend/.env
+```
+*(Make sure to add your Gemini API Key inside `Backend/.env`)*
+
+### 3. Run the Stack
+From the root of the project, run:
+```bash
+docker-compose up -d --build
+```
+
+The platform is now live!
+- **Frontend UI**: [http://localhost:5173](http://localhost:5173)
+- **Backend API**: [http://localhost:5050](http://localhost:5050)
+
+To stop the containers, run:
+```bash
+docker-compose down
+```
+
+---
+
+## 🚦 Manual Installation (Without Docker)
+
+If you prefer to run the Node servers manually:
+
+1. **Start the Backend**:
    ```bash
    cd Backend
    npm install
-   ```
-   Create a `.env` file in the Backend directory:
-   ```env
-   PORT=5050
-   MONGO_URI=mongodb://127.0.0.1:27017/interview_platform
-   JWT_SECRET=your_jwt_secret
-   GOOGLE_GENAI_API_KEY=your_gemini_api_key
-   CLIENT_URL=http://localhost:5173
-   
-   # Optional: For Google OAuth
-   GOOGLE_CLIENT_ID=your_google_client_id
-   GOOGLE_CLIENT_SECRET=your_google_client_secret
-   
-   # Optional: For Email Notifications
-   EMAIL_USER=your_email@gmail.com
-   EMAIL_PASS=your_app_password
-   ```
-
-3. **Frontend Setup**
-   ```bash
-   cd ../Frontend
-   npm install
-   ```
-   Create a `.env` file in the Frontend directory:
-   ```env
-   VITE_API_BASE_URL=http://localhost:5050/api
-   ```
-
-## 🐳 Running with Docker (Recommended)
-
-The easiest way to run the entire stack (Frontend, Backend, and MongoDB) is using Docker Compose.
-
-1. Ensure [Docker](https://docs.docker.com/get-docker/) is installed and running.
-2. From the root of the project, run:
-   ```bash
-   docker-compose up -d --build
-   ```
-3. The platform is now live!
-   - **Frontend**: http://localhost:5173
-   - **Backend**: http://localhost:5050
-4. To stop the containers, run:
-   ```bash
-   docker-compose down
-   ```
-
-## 🚦 Running Locally (Without Docker)
-
-1. Start the backend server:
-   ```bash
-   cd Backend
    npm run dev
    ```
 
-2. Start the frontend dev server:
+2. **Start the Frontend**:
    ```bash
    cd Frontend
+   npm install
    npm run dev
    ```
+
+*(Ensure you have a local MongoDB instance running on port `27017` or provide an Atlas URI in your `.env`)*
+
+---
 
 ## 🧪 Testing
 
-The backend includes integration tests for the authentication and interview controllers.
+This project is fully covered by automated integration and unit tests.
 
+**To run Backend Tests (Jest):**
 ```bash
 cd Backend
 npm test
 ```
 
-## 🔒 Security
+**To run Frontend Tests (Vitest):**
+```bash
+cd Frontend
+npm test
+```
 
-- Passwords are cryptographically hashed using `bcryptjs`.
-- Session management via HTTP-only, secure cookies with JWT.
-- Rate limiting prevents brute force and API abuse:
-  - `authLimiter`: 10 requests per 15 minutes.
-  - `aiLimiter`: 20 requests per 15 minutes.
-  - `generalLimiter`: 100 requests per 15 minutes.
+---
 
 ## 🤝 Contributing
-
-Contributions are welcome! Feel free to open an issue or submit a Pull Request if you'd like to improve the platform.
+Contributions, issues, and feature requests are welcome! Feel free to check the issues page.
