@@ -8,8 +8,13 @@ import Interview from "./features/interview/pages/Interview"
 import Privacy from "./features/interview/pages/Privacy"
 import Terms from "./features/interview/pages/Terms"
 import Help from "./features/interview/pages/Help"
+import Pricing from "./features/payment/pages/Pricing"
 
 export const router = createBrowserRouter([
+  {
+    path: "/pricing",
+    element: <Pricing /> // Public — no auth needed so anyone can view plans
+  },
   {
     path: "/privacy",
     element: <Privacy />

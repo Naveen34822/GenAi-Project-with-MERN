@@ -39,7 +39,9 @@ export const useInterviewStore = create((set) => ({
     } catch (error) {
       console.error("generateReport error:", error);
       set({ loading: false });
-      throw error; // Rethrow to let the UI catch and show the timeout/error
+      // Rethrow the FULL error object so Home.jsx can read
+      // error.response.data.code (e.g. "FREE_LIMIT_REACHED")
+      throw error;
     }
   },
 

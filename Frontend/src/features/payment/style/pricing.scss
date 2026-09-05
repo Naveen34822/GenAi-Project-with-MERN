@@ -1,0 +1,341 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+// ── Design Tokens ─────────────────────────────────────────────────────────────
+$bg-dark:      #0d0f14;
+$bg-card:      #141720;
+$bg-card-pro:  #0f0e1a;
+$border:       rgba(255, 255, 255, 0.08);
+$border-pro:   rgba(108, 99, 255, 0.5);
+$accent:       #6c63ff;
+$accent-2:     #a78bfa;
+$text-primary: #f1f5f9;
+$text-muted:   #64748b;
+$green:        #10b981;
+$red:          #ef4444;
+
+// ── Page ─────────────────────────────────────────────────────────────────────
+.pricing-page {
+  min-height: 100vh;
+  background: $bg-dark;
+  font-family: 'Inter', sans-serif;
+  color: $text-primary;
+  padding: 2rem 1rem 4rem;
+}
+
+// ── Header ───────────────────────────────────────────────────────────────────
+.pricing-header {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto 3rem;
+  position: relative;
+
+  .back-btn {
+    position: absolute;
+    left: 0;
+    top: 0;
+    background: none;
+    border: 1px solid $border;
+    color: $text-muted;
+    padding: 0.4rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    &:hover { color: $text-primary; border-color: $accent; }
+  }
+
+  .pricing-badge {
+    display: inline-block;
+    background: rgba($accent, 0.15);
+    color: $accent-2;
+    border: 1px solid rgba($accent, 0.3);
+    padding: 0.3rem 1rem;
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 1.2rem;
+  }
+
+  h1 {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 800;
+    line-height: 1.2;
+    margin: 0 0 1rem;
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, $accent, $accent-2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .pricing-subtitle {
+    color: $text-muted;
+    font-size: 1.05rem;
+    margin: 0;
+  }
+}
+
+// ── Plans Container ───────────────────────────────────────────────────────────
+.plans-container {
+  display: flex;
+  gap: 1.5rem;
+  max-width: 860px;
+  margin: 0 auto 2.5rem;
+  justify-content: center;
+  align-items: flex-start;
+
+  @media (max-width: 680px) {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+// ── Plan Card ─────────────────────────────────────────────────────────────────
+.plan-card {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 20px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 380px;
+  position: relative;
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover { transform: translateY(-4px); }
+
+  &--pro {
+    background: $bg-card-pro;
+    border-color: $border-pro;
+    box-shadow: 0 0 40px rgba($accent, 0.15), 0 4px 20px rgba(0,0,0,0.4);
+  }
+}
+
+.popular-badge {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, $accent, $accent-2);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.3rem 1.2rem;
+  border-radius: 100px;
+  white-space: nowrap;
+}
+
+// ── Plan Header ───────────────────────────────────────────────────────────────
+.plan-header {
+  text-align: center;
+  margin-bottom: 1.8rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid $border;
+
+  .plan-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+
+  h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0 0 0.8rem;
+  }
+
+  .plan-price {
+    margin-bottom: 0.5rem;
+    .price-amount {
+      font-size: 2.8rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, $accent, $accent-2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .price-period {
+      font-size: 1rem;
+      color: $text-muted;
+    }
+  }
+
+  .plan-tagline {
+    color: $text-muted;
+    font-size: 0.875rem;
+    margin: 0;
+  }
+}
+
+// ── Features ─────────────────────────────────────────────────────────────────
+.plan-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+
+  .feature-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+    font-weight: 700;
+  }
+
+  &--included {
+    color: $text-primary;
+    .feature-icon {
+      background: rgba($green, 0.15);
+      color: $green;
+    }
+  }
+
+  &--excluded {
+    color: $text-muted;
+    text-decoration: line-through;
+    opacity: 0.6;
+    .feature-icon {
+      background: rgba($red, 0.1);
+      color: $red;
+    }
+  }
+}
+
+// ── Buttons ───────────────────────────────────────────────────────────────────
+.plan-btn {
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s;
+  border: none;
+
+  &--free {
+    background: rgba(255,255,255,0.06);
+    color: $text-muted;
+    border: 1px solid $border;
+    &:hover { background: rgba(255,255,255,0.1); color: $text-primary; }
+  }
+
+  &--pro {
+    background: linear-gradient(135deg, $accent, $accent-2);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba($accent, 0.4);
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px rgba($accent, 0.5);
+    }
+    &:disabled { opacity: 0.7; cursor: not-allowed; }
+  }
+}
+
+.btn-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.plan-note {
+  text-align: center;
+  color: $text-muted;
+  font-size: 0.78rem;
+  margin: 0.75rem 0 0;
+}
+
+// ── Test Notice ───────────────────────────────────────────────────────────────
+.test-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  max-width: 500px;
+  margin: 0 auto 3rem;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  font-size: 0.875rem;
+
+  span:first-child { font-size: 1.2rem; flex-shrink: 0; }
+
+  strong { display: block; color: #f59e0b; margin-bottom: 0.2rem; }
+
+  p { margin: 0; color: $text-muted; }
+
+  code {
+    background: rgba(255,255,255,0.1);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-family: monospace;
+    color: $text-primary;
+  }
+}
+
+// ── FAQ ───────────────────────────────────────────────────────────────────────
+.pricing-faq {
+  max-width: 860px;
+  margin: 0 auto;
+
+  h3 {
+    text-align: center;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0 0 2rem;
+    color: $text-primary;
+  }
+}
+
+.faq-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem;
+
+  @media (max-width: 600px) { grid-template-columns: 1fr; }
+}
+
+.faq-item {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 14px;
+  padding: 1.3rem;
+
+  h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem;
+    color: $text-primary;
+  }
+
+  p {
+    font-size: 0.875rem;
+    color: $text-muted;
+    margin: 0;
+    line-height: 1.6;
+  }
+}

@@ -6,6 +6,12 @@ const rateLimit = require("express-rate-limit")
 
 const app = express()
 
+// ── Razorpay Webhook: MUST use express.raw() BEFORE express.json() ───────────
+// Razorpay verifies webhooks using the RAW request body.
+// If express.json() parses the body first, the signature check will FAIL.
+// So we intercept this specific route with raw body parsing.
+app.use("/api/payment/webhook", express.raw({ type: "application/json" }))
+
 app.use(express.json())
 app.use(cookieParser())
 app.use(passport.initialize()) // initialize passport (no sessions needed — we use JWT)
@@ -60,10 +66,12 @@ app.use("/api/", generalLimiter)
 const authRouter = require("./routes/auth.routes")
 const interviewRouter = require("./routes/interview.routes")
 const atsRouter = require("./routes/ats.routes")
+const paymentRouter = require("./routes/payment.routes")
 
 app.use("/api/auth", authLimiter, authRouter)
 app.use("/api/interview", aiLimiter, interviewRouter)
 app.use("/api/ats", aiLimiter, atsRouter)
+app.use("/api/payment", paymentRouter)
 
 // ── Global Error Handler ───────────────────────────────────────────────────────
 app.use((err, req, res, next) => {

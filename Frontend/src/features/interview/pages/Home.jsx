@@ -1,10 +1,12 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import "../style/home.scss"
 import { useInterview } from '../hooks/useInterview.js'
 import { useNavigate, Link } from 'react-router'
 import { useAuth } from '../../auth/hooks/useAuth'
 import AnalyticsDashboard from '../components/AnalyticsDashboard'
 import toast from 'react-hot-toast'
+import { getPaymentStatus } from '../../payment/services/payment.service'
+import UpgradeModal from '../../payment/components/UpgradeModal'
 
 const Home = () => {
   const { loading, generateReport, reports } = useInterview()
@@ -14,6 +16,22 @@ const Home = () => {
   const [selectedFileName, setSelectedFileName] = useState("")
   const resumeInputRef = useRef()
   const navigate = useNavigate()
+
+  // ── Plan / Subscription State ──────────────────────────────────────────────
+  const [planStatus, setPlanStatus] = useState(null)
+  // planStatus = { plan: 'free'|'pro', interviewsThisMonth: 2, freeLimit: 3, planExpiresAt }
+
+  // ── Upgrade Modal State ──────────────────────────────────────────────────
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [limitInfo, setLimitInfo] = useState({ used: 3, limit: 3, resetsAt: null })
+  // limitInfo tracks usage and reset date — displayed inside the modal
+
+  // Fetch the user's current plan when the page loads
+  useEffect(() => {
+    getPaymentStatus()
+      .then(data => setPlanStatus(data))
+      .catch(() => {}) // silently fail — plan info is non-critical
+  }, [])
 
   const handleFileChange = (e) => {
     const file = e.target.files[0]
@@ -38,13 +56,37 @@ const Home = () => {
     }
 
     const toastId = toast.loading("Analyzing your profile & generating strategy...");
-    const data = await generateReport({ jobDescription, selfDescription, resumeFile })
 
-    if (data?._id) {
-      toast.success("ATS Score and Report sent to your email!", { id: toastId })
-      navigate(`/interview/${data._id}`)
-    } else {
-      toast.error("Something went wrong generating your report. Please try again.", { id: toastId })
+    try {
+      const data = await generateReport({ jobDescription, selfDescription, resumeFile })
+
+      if (data?._id) {
+        toast.success("ATS Score and Report sent to your email!", { id: toastId })
+        // Refresh plan status so the usage badge updates
+        getPaymentStatus().then(d => setPlanStatus(d)).catch(() => {})
+        navigate(`/interview/${data._id}`)
+      } else {
+        toast.error("Something went wrong generating your report. Please try again.", { id: toastId })
+      }
+    } catch (err) {
+      toast.dismiss(toastId)
+
+      // ── Intercept FREE_LIMIT_REACHED ─────────────────────────────────────
+      // When the backend returns 403 + code: "FREE_LIMIT_REACHED"
+      // we show the 3D upgrade modal instead of a plain toast error
+      const serverCode = err?.response?.data?.code
+      if (serverCode === 'FREE_LIMIT_REACHED') {
+        const used     = err?.response?.data?.used     ?? 3
+        const limit    = err?.response?.data?.limit    ?? 3
+        const resetsAt = err?.response?.data?.resetsAt ?? null
+        setLimitInfo({ used, limit, resetsAt })
+        setShowUpgradeModal(true)
+        return
+      }
+
+      // All other errors — show as toast
+      const msg = err?.message || 'Something went wrong. Please try again.'
+      toast.error(msg)
     }
   }
 
@@ -62,6 +104,16 @@ const Home = () => {
   }
 
   return (
+    <>
+      {/* 3D Upgrade Modal — appears when free user hits the 3-report limit */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        used={limitInfo.used}
+        limit={limitInfo.limit}
+        resetsAt={limitInfo.resetsAt}
+      />
+
     <div className='home-page'>
 
       {/* Navbar */}
@@ -71,6 +123,35 @@ const Home = () => {
           <span className='navbar__title'>AI Interview Prep</span>
         </div>
         <div className='navbar__user'>
+
+          {/* Free tier usage badge */}
+          {planStatus && planStatus.plan === 'free' && (
+            <div className='plan-badge plan-badge--free'
+              title={`${planStatus.interviewsThisMonth}/${planStatus.freeLimit} reports used this month`}>
+              <span>🆓</span>
+              <span>{planStatus.interviewsThisMonth}/{planStatus.freeLimit} this month</span>
+            </div>
+          )}
+
+          {/* Pro badge */}
+          {planStatus && planStatus.plan === 'pro' && (
+            <div className='plan-badge plan-badge--pro' title='Pro Plan Active'>
+              <span>💎</span>
+              <span>Pro</span>
+            </div>
+          )}
+
+          {/* Upgrade button — only for free users */}
+          {planStatus && planStatus.plan === 'free' && (
+            <button
+              className='upgrade-btn'
+              onClick={() => navigate('/pricing')}
+              id='upgrade-to-pro-nav-btn'
+            >
+              ⚡ Upgrade to Pro
+            </button>
+          )}
+
           {user?.avatar ? (
             <img className='navbar__avatar' src={user.avatar} alt={user.username} referrerPolicy="no-referrer" />
           ) : (
@@ -235,6 +316,7 @@ const Home = () => {
         <Link to='/help'>Help Center</Link>
       </footer>
     </div>
+    </>
   )
 }
 
