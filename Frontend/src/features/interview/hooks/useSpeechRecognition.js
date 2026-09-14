@@ -1,7 +1,14 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 
-const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
-export const isSpeechSupported = !!SpeechRecognitionAPI
+// Lazy getter — avoids "Cannot access before initialization" in production builds
+// where Vite may reorder modules during tree-shaking
+const getSpeechRecognitionAPI = () =>
+  typeof window !== 'undefined'
+    ? window.SpeechRecognition || window.webkitSpeechRecognition
+    : null
+
+export const isSpeechSupported = typeof window !== 'undefined' &&
+  !!(window.SpeechRecognition || window.webkitSpeechRecognition)
 
 /**
  * Reusable hook for managing the Web Speech Recognition API lifecycle.
@@ -26,6 +33,9 @@ export const useSpeechRecognition = ({ onSpeechResult, lang = 'en-US' } = {}) =>
 
   useEffect(() => {
     if (!isSpeechSupported) return
+
+    const SpeechRecognitionAPI = getSpeechRecognitionAPI()
+    if (!SpeechRecognitionAPI) return
 
     const rec = new SpeechRecognitionAPI()
     rec.continuous = true
