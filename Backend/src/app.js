@@ -43,12 +43,14 @@ const generalLimiter = rateLimit({
   message: { message: "Too many requests, please try again later." }
 })
 
-// Stricter limiter for auth endpoints: 10 requests per 15 minutes
+// Stricter limiter for auth endpoints: 30 requests per 15 minutes per IP
+// keyGenerator ensures we use the REAL client IP behind Render/Vercel proxy
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 30,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.ip,
   message: { message: "Too many login/register attempts, please try again later." }
 })
 
