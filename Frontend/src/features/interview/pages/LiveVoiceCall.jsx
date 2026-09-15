@@ -60,7 +60,41 @@ const LiveVoiceCall = () => {
     }
   })
 
-  // We need handleUserAnswerSubmitted before silence detection
+  // 1. Refs for breaking circular hook dependencies
+  const handleUserAnswerSubmittedRef = useRef(null)
+  const startSilenceTimerRef = useRef(null)
+
+  // 2. Speech Recognition (uses silence timer ref)
+  const {
+    isListening,
+    currentSpeechText,
+    setCurrentSpeechText,
+    startRecognition,
+    stopRecognition,
+    recognitionRef
+  } = useSpeechRecognition({
+    onSpeechResult: (text) => {
+      startSilenceTimerRef.current?.(text)
+    }
+  })
+
+  // 3. Silence Detection (uses submit ref and stopRecognition)
+  const { startSilenceTimer, clearSilenceTimer, lastSpeechTextRef } = useSilenceDetection({
+    delay: 4000,
+    onSilenceTimeout: (text) => {
+      if (statusRef.current === 'connected') {
+        stopRecognition()
+        handleUserAnswerSubmittedRef.current?.(text)
+      }
+    }
+  })
+
+  // Update silence timer ref
+  useEffect(() => {
+    startSilenceTimerRef.current = startSilenceTimer
+  }, [startSilenceTimer])
+
+  // 4. Submit Handler (now safely has access to setCurrentSpeechText)
   const handleUserAnswerSubmitted = useCallback(async (text) => {
     const userMsg = { role: 'user', text }
     const updatedHistory = [...historyRef.current, userMsg]
@@ -91,34 +125,10 @@ const LiveVoiceCall = () => {
     }
   }, [report?.jobDescription, report?.resume, speakText, cancelSpeech, setCurrentSpeechText])
   
-  // Ref for the silence timeout to access the latest submit function without circular deps
-  const handleUserAnswerSubmittedRef = useRef(handleUserAnswerSubmitted)
+  // Update submit ref
   useEffect(() => {
     handleUserAnswerSubmittedRef.current = handleUserAnswerSubmitted
   }, [handleUserAnswerSubmitted])
-
-  const { startSilenceTimer, clearSilenceTimer, lastSpeechTextRef } = useSilenceDetection({
-    delay: 4000,
-    onSilenceTimeout: (text) => {
-      if (statusRef.current === 'connected') {
-        stopRecognition()
-        handleUserAnswerSubmittedRef.current(text)
-      }
-    }
-  })
-
-  const {
-    isListening,
-    currentSpeechText,
-    setCurrentSpeechText,
-    startRecognition,
-    stopRecognition,
-    recognitionRef
-  } = useSpeechRecognition({
-    onSpeechResult: (text) => {
-      startSilenceTimer(text)
-    }
-  })
 
   // --- ACTIONS ---
 
