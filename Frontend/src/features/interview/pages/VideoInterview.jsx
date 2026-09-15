@@ -47,6 +47,13 @@ const VideoInterview = () => {
     return () => clearInterval(interval)
   }, [status])
 
+  // Attach camera stream to video element once it renders
+  useEffect(() => {
+    if (status === 'connected' && videoRef.current && mediaStreamRef.current) {
+      videoRef.current.srcObject = mediaStreamRef.current
+    }
+  }, [status])
+
   const formatTime = (secs) => {
     const mins = Math.floor(secs / 60)
     const remaining = secs % 60
