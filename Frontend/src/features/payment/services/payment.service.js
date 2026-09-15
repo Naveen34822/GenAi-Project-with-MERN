@@ -1,7 +1,17 @@
 import axios from "axios"
 
-// Base URL — uses Vite proxy in dev, direct URL in prod
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5050"
+const api = axios.create({
+  baseURL: import.meta.env.DEV ? "http://localhost:5050" : "https://genai-project-with-mern.onrender.com",
+  withCredentials: true,
+})
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token")
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
 
 /**
  * Step 1: Ask the backend to create a Razorpay order.
@@ -11,11 +21,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5050"
  * We send that order_id to the Razorpay checkout popup.
  */
 export async function createOrder() {
-  const response = await axios.post(
-    `${BASE_URL}/api/payment/create-order`,
-    {},
-    { withCredentials: true } // send JWT cookie
-  )
+  const response = await api.post("/api/payment/create-order")
   return response.data
 }
 
@@ -26,11 +32,7 @@ export async function createOrder() {
  * Backend verifies the signature and upgrades user to Pro.
  */
 export async function verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_signature }) {
-  const response = await axios.post(
-    `${BASE_URL}/api/payment/verify`,
-    { razorpay_order_id, razorpay_payment_id, razorpay_signature },
-    { withCredentials: true }
-  )
+  const response = await api.post("/api/payment/verify", { razorpay_order_id, razorpay_payment_id, razorpay_signature })
   return response.data
 }
 
@@ -39,9 +41,6 @@ export async function verifyPayment({ razorpay_order_id, razorpay_payment_id, ra
  * Returns: { plan, planExpiresAt, interviewsThisMonth, freeLimit }
  */
 export async function getPaymentStatus() {
-  const response = await axios.get(
-    `${BASE_URL}/api/payment/status`,
-    { withCredentials: true }
-  )
+  const response = await api.get("/api/payment/status")
   return response.data
 }
