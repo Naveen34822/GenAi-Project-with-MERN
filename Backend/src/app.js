@@ -79,19 +79,32 @@ app.use("/api/payment", paymentRouter)
 // Hit GET /api/test-email to see the exact SMTP error on Render
 // REMOVE THIS after debugging!
 app.get("/api/test-email", async (req, res) => {
-  const nodemailer = require("nodemailer")
-  const user = process.env.SMTP_USER
-  const pass = process.env.SMTP_PASS
-
-  if (!user || !pass) {
-    return res.json({
-      error: "SMTP_USER or SMTP_PASS not set in environment",
-      SMTP_USER: user ? "SET" : "MISSING",
-      SMTP_PASS: pass ? "SET" : "MISSING"
-    })
-  }
-
   try {
+    if (process.env.RESEND_API_KEY) {
+      const { Resend } = require("resend")
+      const resend = new Resend(process.env.RESEND_API_KEY)
+      const data = await resend.emails.send({
+        from: 'Hirelens <onboarding@resend.dev>',
+        to: process.env.SMTP_USER || 'delivered@resend.dev',
+        subject: "Hirelens Deployed Email Test (Resend)",
+        html: "<h1>Email works from Render!</h1><p>If you see this, Resend HTTP API is working.</p>"
+      })
+      return res.json({ success: true, method: "Resend", data })
+    }
+
+    const nodemailer = require("nodemailer")
+    const user = process.env.SMTP_USER
+    const pass = process.env.SMTP_PASS
+
+    if (!user || !pass) {
+      return res.json({
+        error: "RESEND_API_KEY not set. SMTP_USER or SMTP_PASS not set either.",
+        SMTP_USER: user ? "SET" : "MISSING",
+        SMTP_PASS: pass ? "SET" : "MISSING",
+        RESEND_API_KEY: "MISSING"
+      })
+    }
+
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: { user, pass }
@@ -102,11 +115,11 @@ app.get("/api/test-email", async (req, res) => {
     const info = await transporter.sendMail({
       from: `"Hirelens Test" <${user}>`,
       to: user,
-      subject: "Hirelens Deployed Email Test",
+      subject: "Hirelens Deployed Email Test (SMTP)",
       html: "<h1>Email works from Render!</h1><p>If you see this, SMTP is working on the deployed server.</p>"
     })
 
-    res.json({ success: true, messageId: info.messageId })
+    res.json({ success: true, method: "SMTP", messageId: info.messageId })
   } catch (err) {
     res.json({
       success: false,
