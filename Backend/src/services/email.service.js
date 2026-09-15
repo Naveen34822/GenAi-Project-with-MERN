@@ -118,43 +118,6 @@ const sendInterviewReportEmail = async (userEmail, userName, role, score, report
         console.error("Error sending email:", error);
     }
 };
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
-                    <h2 style="color: #4f46e5; text-align: center;">AI Interview Completed! 🎉</h2>
-                    <p>Hi ${userName},</p>
-                    <p>Your mock interview report for the <strong>${role}</strong> role is ready.</p>
-                    
-                    <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center;">
-                        <h3 style="margin: 0; color: #334155;">Your ATS Match Score</h3>
-                        <h1 style="margin: 10px 0; font-size: 48px; color: ${score >= 80 ? '#22c55e' : score >= 60 ? '#f59e0b' : '#ef4444'};">
-                            ${score}%
-                        </h1>
-                    </div>
-                    
-                    <p>We've analyzed your responses, identified skill gaps, and generated a tailored roadmap for your improvement.</p>
-                    
-                    <div style="text-align: center; margin-top: 30px;">
-                        <a href="${reportLink}" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
-                            View Full Report
-                        </a>
-                    </div>
-                    
-                    <p style="margin-top: 40px; font-size: 12px; color: #94a3b8; text-align: center;">
-                        This is an automated message from the AI Interview Platform.
-                    </p>
-                </div>
-            `,
-        });
-
-        console.log(`✉️ Interview Report Email Sent!`);
-        
-        // Only print the preview URL if we are using the Ethereal test account
-        if (!process.env.SMTP_USER) {
-            console.log(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
-        }
-    } catch (error) {
-        console.error("Error sending email:", error);
-    }
-};
 
 /**
  * Sends the full interview transcript (Q&A) to the user via email.
@@ -221,13 +184,7 @@ const sendInterviewTranscriptEmail = async (userEmail, userName, role, transcrip
     }
 };
 
-        console.log(`✉️ Transcript Email Sent!`);
-        if (!process.env.SMTP_USER) {
-            console.log(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
-        }
-    } catch (error) {
-        console.error("Error sending transcript email:", error);
-    }
-};
+
+
 
 module.exports = { sendInterviewReportEmail , sendInterviewTranscriptEmail };

@@ -5,6 +5,7 @@ const passport = require("./config/passport")
 const rateLimit = require("express-rate-limit")
 
 const app = express()
+app.set("trust proxy", 1) // Required for rate limiting behind Render/Vercel proxies
 
 // ── Razorpay Webhook: MUST use express.raw() BEFORE express.json() ───────────
 // Razorpay verifies webhooks using the RAW request body.
@@ -44,13 +45,11 @@ const generalLimiter = rateLimit({
 })
 
 // Stricter limiter for auth endpoints: 30 requests per 15 minutes per IP
-// keyGenerator ensures we use the REAL client IP behind Render/Vercel proxy
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.ip,
   message: { message: "Too many login/register attempts, please try again later." }
 })
 
