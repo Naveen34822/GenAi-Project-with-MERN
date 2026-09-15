@@ -58,8 +58,9 @@ const sendInterviewReportEmail = async (userEmail, userName, role, score, report
     }
 
     try {
+        const fromAddr = process.env.SMTP_USER || 'no-reply@ai-interview.com'
         const info = await transporter.sendMail({
-            from: '"AI Interview Platform" <no-reply@ai-interview.com>',
+            from: `"Hirelens" <${fromAddr}>`,
             to: userEmail,
             subject: `Your AI Interview Report: ${role}`,
             html: `
@@ -126,8 +127,9 @@ const sendInterviewTranscriptEmail = async (userEmail, userName, role, transcrip
             `;
         }).join('');
 
+        const fromAddr = process.env.SMTP_USER || 'no-reply@ai-interview.com'
         const info = await transporter.sendMail({
-            from: '"AI Interview Platform" <no-reply@ai-interview.com>',
+            from: `"Hirelens" <${fromAddr}>`,
             to: userEmail,
             subject: `Your Interview Transcript: ${role}`,
             html: `
