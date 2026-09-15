@@ -75,6 +75,49 @@ app.use("/api/interview", aiLimiter, interviewRouter)
 app.use("/api/ats", aiLimiter, atsRouter)
 app.use("/api/payment", paymentRouter)
 
+// ── Temporary Diagnostic: Test Email on Deployed Server ───────────────────────
+// Hit GET /api/test-email to see the exact SMTP error on Render
+// REMOVE THIS after debugging!
+app.get("/api/test-email", async (req, res) => {
+  const nodemailer = require("nodemailer")
+  const user = process.env.SMTP_USER
+  const pass = process.env.SMTP_PASS
+
+  if (!user || !pass) {
+    return res.json({
+      error: "SMTP_USER or SMTP_PASS not set in environment",
+      SMTP_USER: user ? "SET" : "MISSING",
+      SMTP_PASS: pass ? "SET" : "MISSING"
+    })
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user, pass }
+    })
+
+    await transporter.verify()
+
+    const info = await transporter.sendMail({
+      from: `"Hirelens Test" <${user}>`,
+      to: user,
+      subject: "Hirelens Deployed Email Test",
+      html: "<h1>Email works from Render!</h1><p>If you see this, SMTP is working on the deployed server.</p>"
+    })
+
+    res.json({ success: true, messageId: info.messageId })
+  } catch (err) {
+    res.json({
+      success: false,
+      error: err.message,
+      code: err.code,
+      command: err.command,
+      fullError: err.toString()
+    })
+  }
+})
+
 // ── Global Error Handler ───────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err.stack || err)
